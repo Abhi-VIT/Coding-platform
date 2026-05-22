@@ -20,18 +20,13 @@ Python Compiler Lab is a web application for practicing Python coding questions.
 - Hidden/private testcase results show only pass or fail
 - GitHub Pages support with browser-based Python execution through Pyodide
 
-## Admin Login
+## Accounts
 
-Default admin credentials:
+Users can sign up with a username and password, solve questions, appear on the leaderboard, and suggest new questions for review.
 
-```text
-username: admin
-password: admin123
-```
+The admin account opens the control panel, where questions can be added, suggested questions can be approved or rejected, and users can be removed. Admin credentials are not shown in the app UI.
 
-If the login is `admin / admin123`, the app opens the admin page. Any other login or signup opens the user practice page.
-
-On GitHub Pages, admin-created questions are saved in the current browser with `localStorage`. To permanently add default questions for everyone, edit `data/questions.json` and push the change to GitHub.
+On GitHub Pages, account data, admin-added questions, suggestions, and leaderboard progress are saved in the current browser with `localStorage`. To permanently add default questions for everyone, edit `data/questions.json` and push the change to GitHub.
 
 ## Project Structure
 
@@ -89,7 +84,7 @@ The local backend version uses `server.py` for admin login, saving questions to 
 GitHub Pages can only host static files, so it cannot run `server.py` or Python subprocesses on the server. The frontend automatically switches to static mode when hosted on GitHub Pages:
 
 - Questions load from `data/questions.json`.
-- Admin-added questions are stored in the browser with `localStorage`.
+- User accounts, admin-added questions, suggested questions, and leaderboard progress are stored in the browser with `localStorage`.
 - Python submissions run in the browser with Pyodide loaded from a CDN.
 - Private testcase inputs still exist in the public JSON file, so GitHub Pages mode is best for demos and learning projects.
 

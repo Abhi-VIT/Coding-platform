@@ -296,5 +296,5 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8000"))
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     print(f"Compiler website running at http://127.0.0.1:{port}")
-    print(f"Admin login: {ADMIN_USERNAME} / {ADMIN_PASSWORD}")
+    print("Admin login is enabled. Set ADMIN_USERNAME and ADMIN_PASSWORD to customize it.")
     server.serve_forever()

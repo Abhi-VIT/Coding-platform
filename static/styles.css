@@ -119,6 +119,10 @@ main {
   display: grid;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .home-view {
   gap: 26px;
 }
@@ -249,7 +253,8 @@ main {
 .problem-panel,
 .editor-shell,
 .results,
-.admin-panel {
+.admin-panel,
+.tool-panel {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -335,6 +340,28 @@ h3 {
   display: grid;
   grid-template-rows: auto minmax(420px, 1fr) auto;
   gap: 16px;
+}
+
+.single-column {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.tool-panel {
+  padding: 22px;
+}
+
+.playground-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(260px, 0.55fr);
+  gap: 16px;
+}
+
+.unframed {
+  padding-left: 0;
+  padding-right: 0;
+  background: transparent;
+  border-top: 0;
 }
 
 .problem-panel {
@@ -501,6 +528,14 @@ h3 {
   border-top: 1px solid var(--line);
 }
 
+#runSummary,
+#playgroundStatus,
+#suggestStatus,
+#adminStatus {
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .primary-button,
 .ghost-button {
   border: 0;
@@ -579,12 +614,43 @@ pre {
 }
 
 .admin-layout {
-  max-width: 1100px;
+  max-width: 1180px;
   margin: 0 auto;
 }
 
 .admin-panel {
   padding: 22px;
+}
+
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-tab {
+  min-height: 40px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.admin-tab.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.admin-section {
+  display: none;
+}
+
+.admin-section.active {
+  display: block;
 }
 
 label {
@@ -668,6 +734,68 @@ textarea {
   border-bottom: 1px solid var(--line);
 }
 
+.leaderboard-list,
+#pendingSuggestions,
+#adminUsers {
+  display: grid;
+  gap: 10px;
+}
+
+.leaderboard-row,
+.review-card,
+.user-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 58px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.leaderboard-row strong {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 34px;
+  border-radius: 7px;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.leaderboard-row span,
+.review-card strong,
+.user-row strong {
+  font-weight: 850;
+}
+
+.leaderboard-row b {
+  color: var(--success);
+}
+
+.review-card {
+  grid-template-columns: 1fr auto;
+}
+
+.review-card p,
+.user-row span {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.user-row {
+  grid-template-columns: 1fr auto;
+}
+
 .auth-dialog {
   width: min(430px, calc(100vw - 28px));
   padding: 0;
@@ -719,7 +847,11 @@ textarea {
   #userView,
   .form-grid,
   .public-case-grid,
-  .testcase {
+  .testcase,
+  .playground-grid,
+  .leaderboard-row,
+  .review-card,
+  .user-row {
     grid-template-columns: 1fr;
   }
 

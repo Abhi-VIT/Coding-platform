@@ -12,14 +12,18 @@
         <span class="brand-mark">Py</span>
         <span>
           <strong>Python Compiler Lab</strong>
-          <small>Question manager and online judge</small>
+          <small>Practice, submit, and track progress</small>
         </span>
       </button>
       <nav class="nav-actions" aria-label="Main navigation">
         <button id="homeNav" class="nav-link active" type="button">Home</button>
         <button id="userNav" class="nav-link" type="button">Practice</button>
+        <button id="playgroundNav" class="nav-link" type="button">Playground</button>
+        <button id="leaderboardNav" class="nav-link" type="button">Leaderboard</button>
+        <button id="suggestNav" class="nav-link" type="button">Suggest</button>
         <button id="loginOpen" class="primary-button compact" type="button">Login</button>
         <button id="signupOpen" class="ghost-button compact light" type="button">Sign up</button>
+        <button id="logoutButton" class="ghost-button compact light hidden" type="button">Logout</button>
       </nav>
     </header>
 
@@ -28,13 +32,11 @@
         <section class="hero">
           <div class="hero-copy">
             <span class="eyebrow">Python coding platform</span>
-            <h1>Build questions, write code, and check every testcase in one clean workspace.</h1>
-            <p>
-              This project has two sides: admins can upload programming questions with input/output testcases, and users can select a question, write Python code, run it, and instantly see which tests passed.
-            </p>
+            <h1>Practice Python, test your solutions, and climb the leaderboard.</h1>
+            <p>Sign up, solve coding questions, try custom input in the playground, and suggest new problems for review.</p>
             <div class="hero-actions">
               <button id="startPractice" class="primary-button" type="button">Start Practice</button>
-              <button id="adminLoginCta" class="ghost-button" type="button">Admin Login</button>
+              <button id="homeSignupCta" class="ghost-button" type="button">Create Account</button>
             </div>
           </div>
           <div class="hero-preview" aria-label="Editor preview">
@@ -53,21 +55,21 @@ solve()</code></pre>
 
         <section class="details-grid">
           <article>
-            <h2>Admin Side</h2>
-            <p>Login as admin, create questions, add starter code, and save multiple testcase inputs and expected outputs.</p>
+            <h2>Practice</h2>
+            <p>Select problems, write Python, and run every testcase from one focused workspace.</p>
           </article>
           <article>
-            <h2>User Side</h2>
-            <p>Browse available questions, read the problem statement, write Python, reset starter code, and run the judge.</p>
+            <h2>Leaderboard</h2>
+            <p>Track solved questions and see who has completed the most challenges.</p>
           </article>
           <article>
-            <h2>Compiler</h2>
-            <p>The backend runs Python submissions against each testcase with a timeout, then compares actual output with the expected output.</p>
+            <h2>Contribute</h2>
+            <p>Suggest new questions that can be reviewed before they become public practice problems.</p>
           </article>
         </section>
       </section>
 
-      <section id="userView" class="view" aria-label="User side">
+      <section id="userView" class="view" aria-label="Practice">
         <aside class="question-list">
           <div class="panel-heading">
             <h2>Questions</h2>
@@ -105,7 +107,7 @@ solve()</code></pre>
               <span>Python 3</span>
               <span id="cursorStatus">Ln 1, Col 1</span>
               <span id="lineStatus">1 line</span>
-              <span>UTF-8</span>
+              <span id="signedInStatus">Guest</span>
             </div>
             <div class="action-row">
               <button id="runCode" class="primary-button" type="button">Run Testcases</button>
@@ -117,35 +119,122 @@ solve()</code></pre>
         </section>
       </section>
 
-      <section id="adminView" class="view admin-layout" aria-label="Admin side">
-        <section id="adminPanel" class="admin-panel">
+      <section id="playgroundView" class="view single-column" aria-label="Python playground">
+        <section class="tool-panel">
           <div class="panel-heading">
-            <h2>Upload Question</h2>
-            <span id="adminStatus"></span>
+            <div>
+              <span class="eyebrow">Playground</span>
+              <h2>Run Python With Custom Input</h2>
+            </div>
+            <span id="playgroundStatus"></span>
+          </div>
+          <div class="playground-grid">
+            <label>Code<textarea id="playgroundCode" class="code-input" spellcheck="false">name = input()
+print("Hello", name)</textarea></label>
+            <label>Input<textarea id="playgroundInput" class="code-input" spellcheck="false">Coder</textarea></label>
+          </div>
+          <div class="action-row unframed">
+            <button id="runPlayground" class="primary-button" type="button">Run Code</button>
+          </div>
+          <section class="results">
+            <h3>Output</h3>
+            <pre id="playgroundOutput"></pre>
+          </section>
+        </section>
+      </section>
+
+      <section id="leaderboardView" class="view single-column" aria-label="Leaderboard">
+        <section class="tool-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Leaderboard</span>
+              <h2>Top Solvers</h2>
+            </div>
+            <span id="leaderboardCount"></span>
+          </div>
+          <div id="leaderboardRows" class="leaderboard-list"></div>
+        </section>
+      </section>
+
+      <section id="suggestView" class="view single-column" aria-label="Suggest question">
+        <section class="tool-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Suggest Question</span>
+              <h2>Submit a Problem for Review</h2>
+            </div>
+            <span id="suggestStatus"></span>
           </div>
           <div class="form-grid">
-            <label>Title<input id="questionTitle" placeholder="Example: Reverse a Number"></label>
+            <label>Title<input id="suggestTitle" placeholder="Example: Reverse a Number"></label>
             <label>Difficulty
-              <select id="questionDifficulty">
+              <select id="suggestDifficulty">
                 <option>Easy</option>
                 <option>Medium</option>
                 <option>Hard</option>
               </select>
             </label>
           </div>
-          <label>Question Statement<textarea id="questionStatement" placeholder="Describe input, output, and task."></textarea></label>
-          <label>Starter Code<textarea id="starterCode" class="code-input" spellcheck="false"># Write Python code here
+          <label>Question Statement<textarea id="suggestStatement" placeholder="Describe input, output, and task."></textarea></label>
+          <label>Starter Code<textarea id="suggestStarter" class="code-input" spellcheck="false"># Write Python code here
 </textarea></label>
           <div class="panel-heading">
             <h3>Testcases</h3>
-            <button id="addCase" class="ghost-button" type="button">Add Testcase</button>
+            <button id="addSuggestCase" class="ghost-button" type="button">Add Testcase</button>
           </div>
-          <p class="hint">Mark exactly the examples you want users to see. By default, the first two are public and the rest are private.</p>
-          <div id="testcaseEditor"></div>
-          <button id="saveQuestion" class="primary-button" type="button">Save Question</button>
-          <section class="admin-questions">
-            <h3>Uploaded Questions</h3>
-            <div id="adminQuestions"></div>
+          <div id="suggestCaseEditor"></div>
+          <button id="submitSuggestion" class="primary-button" type="button">Submit for Approval</button>
+        </section>
+      </section>
+
+      <section id="adminView" class="view admin-layout" aria-label="Control panel">
+        <section id="adminPanel" class="admin-panel">
+          <div class="panel-heading">
+            <h2>Control Panel</h2>
+            <span id="adminStatus"></span>
+          </div>
+          <div class="admin-tabs" aria-label="Admin tools">
+            <button class="admin-tab active" type="button" data-admin-section="adminUpload">Questions</button>
+            <button class="admin-tab" type="button" data-admin-section="adminApprovals">Approvals</button>
+            <button class="admin-tab" type="button" data-admin-section="adminUsersSection">Users</button>
+          </div>
+
+          <section id="adminUpload" class="admin-section active">
+            <h3>Add Question</h3>
+            <div class="form-grid">
+              <label>Title<input id="questionTitle" placeholder="Example: Reverse a Number"></label>
+              <label>Difficulty
+                <select id="questionDifficulty">
+                  <option>Easy</option>
+                  <option>Medium</option>
+                  <option>Hard</option>
+                </select>
+              </label>
+            </div>
+            <label>Question Statement<textarea id="questionStatement" placeholder="Describe input, output, and task."></textarea></label>
+            <label>Starter Code<textarea id="starterCode" class="code-input" spellcheck="false"># Write Python code here
+</textarea></label>
+            <div class="panel-heading">
+              <h3>Testcases</h3>
+              <button id="addCase" class="ghost-button" type="button">Add Testcase</button>
+            </div>
+            <p class="hint">Mark exactly the examples you want users to see. By default, the first two are public and the rest are private.</p>
+            <div id="testcaseEditor"></div>
+            <button id="saveQuestion" class="primary-button" type="button">Save Question</button>
+            <section class="admin-questions">
+              <h3>Uploaded Questions</h3>
+              <div id="adminQuestions"></div>
+            </section>
+          </section>
+
+          <section id="adminApprovals" class="admin-section">
+            <h3>Suggested Questions</h3>
+            <div id="pendingSuggestions"></div>
+          </section>
+
+          <section id="adminUsersSection" class="admin-section">
+            <h3>Registered Users</h3>
+            <div id="adminUsers"></div>
           </section>
         </section>
       </section>
@@ -153,12 +242,12 @@ solve()</code></pre>
 
     <dialog id="authDialog" class="auth-dialog">
       <form method="dialog" class="auth-card">
-        <button id="closeAuth" class="close-button" type="button" aria-label="Close login">×</button>
+        <button id="closeAuth" class="close-button" type="button" aria-label="Close login">&times;</button>
         <span id="authMode" class="eyebrow">Login</span>
         <h2>Enter the lab</h2>
-        <p>Use admin / admin123 for the admin panel. Any other account opens the user practice page.</p>
-        <label>Username<input id="authUser" value="admin" autocomplete="username"></label>
-        <label>Password<input id="authPass" type="password" value="admin123" autocomplete="current-password"></label>
+        <p id="authHelp">Login to continue, or create a new learner account.</p>
+        <label>Username<input id="authUser" autocomplete="username"></label>
+        <label>Password<input id="authPass" type="password" autocomplete="current-password"></label>
         <button id="authSubmit" class="primary-button" type="button">Continue</button>
         <p id="loginMessage" class="message"></p>
       </form>
