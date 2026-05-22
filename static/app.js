@@ -1,9 +1,16 @@
 const state = {
   questions: [],
+  fullQuestions: [],
   selectedId: null,
   adminToken: localStorage.getItem("adminToken") || "",
   authMode: "login",
+  staticMode: location.protocol === "file:" || location.hostname.endsWith("github.io"),
+  pyodide: null,
+  pyodideLoading: null,
 };
+
+const STATIC_QUESTIONS_URL = "../data/questions.json";
+const LOCAL_QUESTIONS_KEY = "compilerLabQuestions";
 
 const els = {
   homeLogo: document.querySelector("#homeLogo"),
@@ -84,7 +91,7 @@ async function api(path, options = {}) {
     headers.Authorization = `Bearer ${state.adminToken}`;
   }
   const response = await fetch(path, { ...options, headers });
-  const data = await response.json();
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(data.error || "Request failed");
   }
@@ -92,7 +99,16 @@ async function api(path, options = {}) {
 }
 
 async function loadQuestions() {
-  state.questions = await api("/api/questions");
+  if (state.staticMode) {
+    await loadStaticQuestions();
+  } else {
+    try {
+      state.questions = await api("/api/questions");
+    } catch (error) {
+      state.staticMode = true;
+      await loadStaticQuestions();
+    }
+  }
   if (!state.selectedId && state.questions.length) {
     state.selectedId = state.questions[0].id;
   }
@@ -131,6 +147,37 @@ function selectQuestion(id) {
   updateEditorMeta();
 }
 
+async function loadStaticQuestions() {
+  const seedQuestions = await fetch(STATIC_QUESTIONS_URL).then((response) => response.json());
+  const localQuestions = JSON.parse(localStorage.getItem(LOCAL_QUESTIONS_KEY) || "[]");
+  const merged = [...seedQuestions, ...localQuestions];
+  state.fullQuestions = merged;
+  state.questions = merged.map(toPublicQuestion);
+}
+
+function toPublicQuestion(question) {
+  const publicTestcases = publicTestcasesFor(question);
+  return {
+    id: question.id,
+    title: question.title,
+    difficulty: question.difficulty,
+    statement: question.statement,
+    starterCode: question.starterCode || "",
+    testcaseCount: (question.testcases || []).length,
+    publicTestcaseCount: publicTestcases.length,
+    publicTestcases,
+  };
+}
+
+function publicTestcasesFor(question) {
+  return (question.testcases || [])
+    .filter((testcase, index) => testcase.isPublic ?? index < 2)
+    .map((testcase) => ({
+      input: testcase.input || "",
+      output: testcase.output || "",
+    }));
+}
+
 function renderPublicTestcases(testcases) {
   if (!testcases.length) {
     els.publicTestcases.innerHTML = "<p class=\"hint\">No public examples are available for this question.</p>";
@@ -158,13 +205,15 @@ async function runCode() {
   const question = state.questions.find((item) => item.id === state.selectedId);
   if (!question) return;
   els.runCode.disabled = true;
-  els.runSummary.textContent = "Running...";
+  els.runSummary.textContent = state.staticMode ? "Loading Python..." : "Running...";
   els.results.innerHTML = "";
   try {
-    const data = await api("/api/run", {
-      method: "POST",
-      body: JSON.stringify({ questionId: question.id, code: els.codeEditor.value }),
-    });
+    const data = state.staticMode
+      ? await runStaticJudge(question.id, els.codeEditor.value)
+      : await api("/api/run", {
+          method: "POST",
+          body: JSON.stringify({ questionId: question.id, code: els.codeEditor.value }),
+        });
     els.runSummary.textContent = `${data.passed}/${data.total} testcases passed`;
     els.results.innerHTML = data.results.map(renderResult).join("");
   } catch (error) {
@@ -172,6 +221,87 @@ async function runCode() {
   } finally {
     els.runCode.disabled = false;
   }
+}
+
+async function runStaticJudge(questionId, code) {
+  const question = state.fullQuestions.find((item) => item.id === questionId);
+  if (!question) throw new Error("Question not found");
+  const pyodide = await getPyodide();
+  els.runSummary.textContent = "Running...";
+  const results = [];
+  for (const [index, testcase] of (question.testcases || []).entries()) {
+    const run = await runPythonInBrowser(pyodide, code, testcase.input || "");
+    const passed = !run.stderr && normalizeOutput(run.stdout) === normalizeOutput(testcase.output || "");
+    const isPublic = testcase.isPublic ?? index < 2;
+    const result = {
+      index: index + 1,
+      passed,
+      isPublic,
+      timedOut: false,
+    };
+    if (isPublic) {
+      result.input = testcase.input || "";
+      result.actual = run.stdout;
+      result.stderr = run.stderr;
+    }
+    results.push(result);
+  }
+  return {
+    passed: results.filter((item) => item.passed).length,
+    total: results.length,
+    results,
+  };
+}
+
+async function getPyodide() {
+  if (state.pyodide) return state.pyodide;
+  if (!state.pyodideLoading) {
+    state.pyodideLoading = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js";
+      script.onload = async () => {
+        try {
+          state.pyodide = await loadPyodide();
+          resolve(state.pyodide);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      script.onerror = () => reject(new Error("Python runtime could not load. Check your internet connection."));
+      document.head.appendChild(script);
+    });
+  }
+  return state.pyodideLoading;
+}
+
+async function runPythonInBrowser(pyodide, code, testcaseInput) {
+  let stdout = "";
+  let stderr = "";
+  const inputLines = testcaseInput.replace(/\r\n/g, "\n").split("\n");
+  let inputIndex = 0;
+  pyodide.setStdout({ batched: (text) => (stdout += `${text}\n`) });
+  pyodide.setStderr({ batched: (text) => (stderr += `${text}\n`) });
+  pyodide.setStdin({
+    stdin: () => {
+      if (inputIndex >= inputLines.length) return "";
+      return inputLines[inputIndex++];
+    },
+  });
+  try {
+    await pyodide.runPythonAsync(code);
+  } catch (error) {
+    stderr += error.message;
+  }
+  return { stdout, stderr };
+}
+
+function normalizeOutput(value) {
+  return String(value)
+    .trim()
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .trim();
 }
 
 function renderResult(result) {
@@ -206,6 +336,14 @@ async function authContinue() {
     return;
   }
   if (username === "admin" && password === "admin123") {
+    if (state.staticMode) {
+      const token = `static-${Date.now()}`;
+      state.adminToken = token;
+      localStorage.setItem("adminToken", token);
+      els.authDialog.close();
+      switchView("admin");
+      return;
+    }
     try {
       const data = await api("/api/admin/login", {
         method: "POST",
@@ -240,7 +378,7 @@ async function showAdminPanel() {
 
 async function loadAdminQuestions() {
   try {
-    const questions = await api("/api/admin/questions", { admin: true });
+    const questions = state.staticMode ? state.fullQuestions : await api("/api/admin/questions", { admin: true });
     els.adminQuestions.innerHTML = questions
       .map(
         (q) => `
@@ -279,17 +417,29 @@ async function saveQuestion() {
   }));
   els.adminStatus.textContent = "Saving...";
   try {
-    await api("/api/admin/questions", {
-      method: "POST",
-      admin: true,
-      body: JSON.stringify({
-        title: els.questionTitle.value,
-        difficulty: els.questionDifficulty.value,
-        statement: els.questionStatement.value,
-        starterCode: els.starterCode.value,
-        testcases,
-      }),
-    });
+    const question = {
+      id: slugify(els.questionTitle.value),
+      title: els.questionTitle.value.trim(),
+      difficulty: els.questionDifficulty.value,
+      statement: els.questionStatement.value.trim(),
+      starterCode: els.starterCode.value,
+      testcases,
+    };
+    if (state.staticMode) {
+      if (!question.title || !question.statement || !testcases.length) {
+        throw new Error("Title, statement, and at least one testcase are required.");
+      }
+      const localQuestions = JSON.parse(localStorage.getItem(LOCAL_QUESTIONS_KEY) || "[]");
+      const updated = localQuestions.filter((item) => item.id !== question.id);
+      updated.push(question);
+      localStorage.setItem(LOCAL_QUESTIONS_KEY, JSON.stringify(updated));
+    } else {
+      await api("/api/admin/questions", {
+        method: "POST",
+        admin: true,
+        body: JSON.stringify(question),
+      });
+    }
     els.adminStatus.textContent = "Saved";
     els.questionTitle.value = "";
     els.questionStatement.value = "";
@@ -302,6 +452,14 @@ async function saveQuestion() {
   } catch (error) {
     els.adminStatus.textContent = error.message;
   }
+}
+
+function slugify(value) {
+  const slug = String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || `question-${Date.now()}`;
 }
 
 function updateEditorMeta() {

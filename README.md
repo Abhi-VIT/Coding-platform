@@ -1,6 +1,6 @@
 # Python Compiler Lab
 
-Python Compiler Lab is a local web application for practicing Python coding questions. It has an admin side for uploading questions and testcases, and a user side where students can select a question, write Python code, run it, and see which testcases pass.
+Python Compiler Lab is a web application for practicing Python coding questions. It has an admin side for uploading questions and testcases, and a user side where students can select a question, write Python code, run it, and see which testcases pass.
 
 ## Features
 
@@ -18,6 +18,7 @@ Python Compiler Lab is a local web application for practicing Python coding ques
   - `Ctrl + Enter` runs code
 - Python code runner with testcase checking
 - Hidden/private testcase results show only pass or fail
+- GitHub Pages support with browser-based Python execution through Pyodide
 
 ## Admin Login
 
@@ -30,21 +31,44 @@ password: admin123
 
 If the login is `admin / admin123`, the app opens the admin page. Any other login or signup opens the user practice page.
 
+On GitHub Pages, admin-created questions are saved in the current browser with `localStorage`. To permanently add default questions for everyone, edit `data/questions.json` and push the change to GitHub.
+
 ## Project Structure
 
 ```text
 Compiler-python/
-├── server.py
-├── README.md
-├── data/
-│   └── questions.json
-└── static/
-    ├── index.html
-    ├── styles.css
-    └── app.js
+|-- index.html
+|-- server.py
+|-- README.md
+|-- data/
+|   `-- questions.json
+`-- static/
+    |-- index.html
+    |-- styles.css
+    `-- app.js
 ```
 
-## How To Run
+## Go Live With GitHub Pages
+
+1. Push this project to a GitHub repository.
+2. On GitHub, open the repository settings.
+3. Go to `Pages`.
+4. Under `Build and deployment`, choose:
+   - Source: `Deploy from a branch`
+   - Branch: `main`
+   - Folder: `/ (root)`
+5. Click `Save`.
+6. Wait for GitHub Pages to publish the site.
+
+Your live URL will look like:
+
+```text
+https://your-username.github.io/your-repository-name/
+```
+
+This project includes a root `index.html` that redirects visitors to `static/`, so the repository root works directly on GitHub Pages.
+
+## How To Run Locally With Backend
 
 Open a terminal in the project folder and run:
 
@@ -58,6 +82,17 @@ Then open:
 http://127.0.0.1:8000
 ```
 
+The local backend version uses `server.py` for admin login, saving questions to `data/questions.json`, and running Python submissions with your installed Python interpreter.
+
+## How GitHub Pages Mode Works
+
+GitHub Pages can only host static files, so it cannot run `server.py` or Python subprocesses on the server. The frontend automatically switches to static mode when hosted on GitHub Pages:
+
+- Questions load from `data/questions.json`.
+- Admin-added questions are stored in the browser with `localStorage`.
+- Python submissions run in the browser with Pyodide loaded from a CDN.
+- Private testcase inputs still exist in the public JSON file, so GitHub Pages mode is best for demos and learning projects.
+
 ## User Flow
 
 1. Open the website.
@@ -68,7 +103,7 @@ http://127.0.0.1:8000
 6. Click `Run Testcases`.
 7. Check which public and private tests passed.
 
-The user can see public testcase input/output examples, but private testcase data is hidden.
+The user can see public testcase input/output examples, but private testcase data is hidden in the result screen.
 
 ## Admin Flow
 
@@ -105,7 +140,7 @@ Public testcases are shown to the user as examples. Private testcases are used d
 
 ## Compiler Logic
 
-The compiler logic is built inside `server.py`. It is not a real compiler that converts Python into machine code. Instead, it works like an online judge:
+The local backend compiler logic is built inside `server.py`. It is not a real compiler that converts Python into machine code. Instead, it works like an online judge:
 
 1. The frontend sends the selected question ID and user code to `/api/run`.
 2. The backend finds the matching question from `data/questions.json`.
@@ -128,14 +163,6 @@ completed = subprocess.run(
 )
 ```
 
-This means:
-
-- `sys.executable` runs the same Python installed on the system.
-- `filename` is the temporary Python file containing the user's code.
-- `input=testcase_input` gives testcase input to the program.
-- `capture_output=True` collects output and errors.
-- `timeout=4` stops programs that run too long.
-
 ## Output Checking
 
 Before comparing output, the app normalizes it:
@@ -147,28 +174,11 @@ def normalize_output(value):
 
 This removes extra spaces at the end of lines and ignores extra blank space at the beginning or end of the full output. The normalized user output is compared with the normalized expected output.
 
-## Public vs Private Results
-
-For public testcases, the result page can show:
-
-- testcase number
-- pass/fail
-- input
-- user's output
-
-For private testcases, the result page only shows:
-
-- hidden testcase number
-- pass/fail
-- message that input and expected output are hidden
-
-The backend also avoids sending private testcase input and output to the user API response.
-
 ## Security Note
 
 This project is suitable for local use, demos, and learning. Running user-submitted Python code can be dangerous on a public server because Python code can access files, run commands, or use system resources.
 
-Before deploying publicly, the code runner should be placed inside a secure sandbox such as:
+Before deploying a backend publicly, the code runner should be placed inside a secure sandbox such as:
 
 - Docker container with strict limits
 - isolated virtual machine
@@ -186,4 +196,3 @@ The app includes five default questions:
 5. Count Vowels
 
 Each question has starter code, two public testcases, and at least one private testcase.
-
