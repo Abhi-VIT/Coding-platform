@@ -1,0 +1,122 @@
+[
+  {
+    "id": "sum-two-numbers",
+    "title": "Sum Two Numbers",
+    "difficulty": "Easy",
+    "statement": "Read two integers and print their sum.",
+    "starterCode": "# Read two integers and print their sum\n# Write your code here\n",
+    "testcases": [
+      {
+        "input": "2 3\n",
+        "output": "5\n",
+        "isPublic": true
+      },
+      {
+        "input": "-4 10\n",
+        "output": "6\n",
+        "isPublic": true
+      },
+      {
+        "input": "100 250\n",
+        "output": "350\n",
+        "isPublic": false
+      }
+    ]
+  },
+  {
+    "id": "largest-of-three",
+    "title": "Largest of Three",
+    "difficulty": "Easy",
+    "statement": "Read three integers and print the largest value.",
+    "starterCode": "# Read three integers and print the largest\n# Write your code here\n",
+    "testcases": [
+      {
+        "input": "3 9 1\n",
+        "output": "9\n",
+        "isPublic": true
+      },
+      {
+        "input": "-5 -2 -9\n",
+        "output": "-2\n",
+        "isPublic": true
+      },
+      {
+        "input": "42 42 7\n",
+        "output": "42\n",
+        "isPublic": false
+      }
+    ]
+  },
+  {
+    "id": "palindrome-check",
+    "title": "Palindrome Check",
+    "difficulty": "Easy",
+    "statement": "Read a string and print YES if it is a palindrome, otherwise print NO.",
+    "starterCode": "# Read a string and print YES or NO\n# Write your code here\n",
+    "testcases": [
+      {
+        "input": "level\n",
+        "output": "YES\n",
+        "isPublic": true
+      },
+      {
+        "input": "python\n",
+        "output": "NO\n",
+        "isPublic": true
+      },
+      {
+        "input": "madam\n",
+        "output": "YES\n",
+        "isPublic": false
+      }
+    ]
+  },
+  {
+    "id": "factorial",
+    "title": "Factorial",
+    "difficulty": "Medium",
+    "statement": "Read a non-negative integer n and print n factorial.",
+    "starterCode": "# Read n and print n factorial\n# Write your code here\n",
+    "testcases": [
+      {
+        "input": "0\n",
+        "output": "1\n",
+        "isPublic": true
+      },
+      {
+        "input": "5\n",
+        "output": "120\n",
+        "isPublic": true
+      },
+      {
+        "input": "8\n",
+        "output": "40320\n",
+        "isPublic": false
+      }
+    ]
+  },
+  {
+    "id": "count-vowels",
+    "title": "Count Vowels",
+    "difficulty": "Medium",
+    "statement": "Read one line of text and print how many vowels it contains. Count both uppercase and lowercase vowels.",
+    "starterCode": "# Read one line and print the number of vowels\n# Write your code here\n",
+    "testcases": [
+      {
+        "input": "Hello World\n",
+        "output": "3\n",
+        "isPublic": true
+      },
+      {
+        "input": "PYTHON\n",
+        "output": "1\n",
+        "isPublic": true
+      },
+      {
+        "input": "Education\n",
+        "output": "5\n",
+        "isPublic": false
+      }
+    ]
+  }
+]
