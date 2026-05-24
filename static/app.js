@@ -673,15 +673,36 @@ async function renderSuggestions() {
           .map(
             (item) => `
               <article class="review-card">
-                <div>
-                  <strong>${escapeHtml(item.question.title)}</strong>
-                  <span class="badge">${escapeHtml(item.question.difficulty)}</span>
-                  <p>Suggested by ${escapeHtml(item.author)}</p>
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                  <div>
+                    <strong>${escapeHtml(item.question.title)}</strong>
+                    <span class="badge">${escapeHtml(item.question.difficulty)}</span>
+                    <p>Suggested by ${escapeHtml(item.author)}</p>
+                  </div>
+                  <div class="row-actions">
+                    <button class="primary-button compact" type="button" data-approve="${item.id}">Approve</button>
+                    <button class="ghost-button compact" type="button" data-reject="${item.id}">Reject</button>
+                  </div>
                 </div>
-                <div class="row-actions">
-                  <button class="primary-button compact" type="button" data-approve="${item.id}">Approve</button>
-                  <button class="ghost-button compact" type="button" data-reject="${item.id}">Reject</button>
-                </div>
+                <details style="margin-top: 12px; font-size: 14px;">
+                  <summary style="cursor: pointer; color: var(--accent); font-weight: 600;">View Details</summary>
+                  <div style="margin-top: 8px; padding: 12px; background: var(--surface-2); border-radius: 6px;">
+                    <strong>Description:</strong>
+                    <p style="white-space: pre-wrap; margin-top: 4px; color: var(--ink);">${escapeHtml(item.question.statement)}</p>
+                    <strong style="display: block; margin-top: 12px;">Starter Code:</strong>
+                    <pre style="margin-top: 4px; color: var(--ink);">${escapeHtml(item.question.starterCode || "None")}</pre>
+                    <strong style="display: block; margin-top: 12px;">Testcases:</strong>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+                      ${(item.question.testcases || []).map((tc, idx) => \\`
+                        <div style="background: #fff; padding: 8px; border: 1px solid var(--line); border-radius: 4px; flex: 1; min-width: 200px;">
+                          <strong>Test ${idx + 1} (${tc.isPublic ? 'Public' : 'Private'})</strong><br/>
+                          <small>Input:</small><pre style="color: var(--ink);">${escapeHtml(tc.input)}</pre>
+                          <small>Output:</small><pre style="color: var(--ink);">${escapeHtml(tc.output)}</pre>
+                        </div>
+                      \\`).join("")}
+                    </div>
+                  </div>
+                </details>
               </article>
             `,
           )

@@ -352,8 +352,8 @@ h3 {
 }
 
 .playground-grid {
-  display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(260px, 0.55fr);
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
@@ -776,7 +776,7 @@ textarea {
 }
 
 .review-card {
-  grid-template-columns: 1fr auto;
+  display: block;
 }
 
 .review-card p,
@@ -909,7 +909,9 @@ textarea {
   background: var(--editor);
 }
 .playground-grid .CodeMirror {
-  min-height: 180px;
+  min-height: 300px;
+  height: 300px !important;
+  resize: vertical;
 }
 #lineNumbers {
   display: none !important;
