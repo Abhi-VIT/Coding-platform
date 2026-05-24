@@ -693,13 +693,13 @@ async function renderSuggestions() {
                     <pre style="margin-top: 4px; color: var(--ink);">${escapeHtml(item.question.starterCode || "None")}</pre>
                     <strong style="display: block; margin-top: 12px;">Testcases:</strong>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
-                      ${(item.question.testcases || []).map((tc, idx) => \\`
+                      ${(item.question.testcases || []).map((tc, idx) => `
                         <div style="background: #fff; padding: 8px; border: 1px solid var(--line); border-radius: 4px; flex: 1; min-width: 200px;">
                           <strong>Test ${idx + 1} (${tc.isPublic ? 'Public' : 'Private'})</strong><br/>
                           <small>Input:</small><pre style="color: var(--ink);">${escapeHtml(tc.input)}</pre>
                           <small>Output:</small><pre style="color: var(--ink);">${escapeHtml(tc.output)}</pre>
                         </div>
-                      \\`).join("")}
+                      `).join("")}
                     </div>
                   </div>
                 </details>
