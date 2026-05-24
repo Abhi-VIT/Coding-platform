@@ -912,6 +912,7 @@ textarea {
   min-height: 300px;
   height: 300px !important;
   resize: vertical;
+  overflow: hidden !important;
 }
 #lineNumbers {
   display: none !important;
