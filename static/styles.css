@@ -898,7 +898,7 @@ textarea {
 
 /* CodeMirror Integration */
 .CodeMirror {
-  height: 100% !important;
+  height: 100%;
   min-height: 390px;
   font-family: Consolas, 'Courier New', monospace;
   font-size: 15px;
@@ -910,7 +910,7 @@ textarea {
 }
 .playground-grid .CodeMirror {
   min-height: 300px;
-  height: 300px !important;
+  height: auto;
   resize: vertical;
   overflow: hidden !important;
 }
