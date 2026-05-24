@@ -894,3 +894,27 @@ textarea {
     padding: 16px;
   }
 }
+
+
+/* CodeMirror Integration */
+.CodeMirror {
+  height: 100% !important;
+  min-height: 390px;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 15px;
+  line-height: 1.55;
+  border-radius: 4px;
+}
+.editor-body .CodeMirror {
+  background: var(--editor);
+}
+.playground-grid .CodeMirror {
+  min-height: 180px;
+}
+#lineNumbers {
+  display: none !important;
+}
+.editor-body {
+  display: block; /* Overwrite grid since lineNumbers is gone */
+}
+

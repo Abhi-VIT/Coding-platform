@@ -1,3 +1,19 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getFirestore, collection, doc, getDoc, setDoc, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAoHmBu2hfMD8TA2Qv0-P73yLhWDCdtRXg",
+  authDomain: "coding-platform-1f750.firebaseapp.com",
+  projectId: "coding-platform-1f750",
+  storageBucket: "coding-platform-1f750.firebasestorage.app",
+  messagingSenderId: "262524179509",
+  appId: "1:262524179509:web:335b938387b491a4330d7c",
+  measurementId: "G-K65RR6F6Q2"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const ADMIN_USERNAME_KEY = "compilerLabAdminUser";
 const ADMIN_PASSWORD_KEY = "compilerLabAdminPass";
 const USERS_KEY = "compilerLabUsers";
@@ -16,6 +32,8 @@ const state = {
   staticMode: true,
   pyodide: null,
   pyodideLoading: null,
+  practiceEditor: null,
+  playgroundEditor: null,
 };
 
 const els = {
@@ -112,9 +130,34 @@ function switchView(view) {
     suggest: els.suggestNav,
   };
   Object.entries(navs).forEach(([name, button]) => button.classList.toggle("active", name === view));
+  if (view === "user" && !state.practiceEditor) initPracticeEditor();
+  if (view === "playground" && !state.playgroundEditor) initPlaygroundEditor();
   if (view === "leaderboard") renderLeaderboard();
   if (view === "admin") showAdminPanel();
 }
+
+function initPracticeEditor() {
+  state.practiceEditor = CodeMirror.fromTextArea(els.codeEditor, {
+    mode: "python",
+    theme: "dracula",
+    lineNumbers: true,
+    indentUnit: 4,
+    matchBrackets: true,
+  });
+  state.practiceEditor.on("change", updateEditorMeta);
+  state.practiceEditor.on("cursorActivity", updateEditorMeta);
+}
+
+function initPlaygroundEditor() {
+  state.playgroundEditor = CodeMirror.fromTextArea(els.playgroundCode, {
+    mode: "python",
+    theme: "dracula",
+    lineNumbers: true,
+    indentUnit: 4,
+    matchBrackets: true,
+  });
+}
+
 
 function requireUser(nextView) {
   if (!state.currentUser) {
@@ -154,8 +197,19 @@ async function loadQuestions() {
 
 async function loadStaticQuestions() {
   const seedQuestions = await fetch(STATIC_QUESTIONS_URL).then((response) => response.json());
-  const localQuestions = readJson(LOCAL_QUESTIONS_KEY, []);
-  const approvedSuggestions = readJson(SUGGESTIONS_KEY, []).filter((item) => item.status === "approved");
+  
+  let localQuestions = [];
+  try {
+    const qSnap = await getDocs(collection(db, "questions"));
+    localQuestions = qSnap.docs.map(d => d.data());
+  } catch(e) { console.error(e); }
+  
+  let approvedSuggestions = [];
+  try {
+    const sSnap = await getDocs(collection(db, "suggestions"));
+    approvedSuggestions = sSnap.docs.map(d => d.data()).filter((item) => item.status === "approved");
+  } catch(e) { console.error(e); }
+  
   const merged = [...seedQuestions, ...localQuestions, ...approvedSuggestions.map((item) => item.question)];
   state.fullQuestions = dedupeQuestions(merged);
   state.questions = state.fullQuestions.map(toPublicQuestion);
@@ -208,7 +262,7 @@ function selectQuestion(id) {
   els.selectedDifficulty.textContent = question.difficulty;
   els.selectedTitle.textContent = question.title;
   els.selectedStatement.textContent = question.statement;
-  els.codeEditor.value = question.starterCode || "# Write your Python solution here\n";
+  state.practiceEditor ? state.practiceEditor.setValue(question.starterCode || '# Write your Python solution here\n') : (state.practiceEditor ? state.practiceEditor.getValue() : els.codeEditor.value) = question.starterCode || "# Write your Python solution here\n";
   renderPublicTestcases(question.publicTestcases || []);
   els.results.innerHTML = "";
   els.runSummary.textContent = "";
@@ -251,7 +305,7 @@ async function runCode() {
   els.runSummary.textContent = state.staticMode ? "Loading Python..." : "Running...";
   els.results.innerHTML = "";
   try {
-    const data = await runStaticJudge(question.id, els.codeEditor.value);
+    const data = await runStaticJudge(question.id, (state.practiceEditor ? state.practiceEditor.getValue() : els.codeEditor.value));
     els.runSummary.textContent = `${data.passed}/${data.total} testcases passed`;
     els.results.innerHTML = data.results.map(renderResult).join("");
     if (data.passed === data.total) recordSolve(state.currentUser.username, question.id);
@@ -290,7 +344,7 @@ async function runPlayground() {
   try {
     const pyodide = await getPyodide();
     els.playgroundStatus.textContent = "Running...";
-    const run = await runPythonInBrowser(pyodide, els.playgroundCode.value, els.playgroundInput.value);
+    const run = await runPythonInBrowser(pyodide, (state.playgroundEditor ? state.playgroundEditor.getValue() : els.playgroundCode.value), els.playgroundInput.value);
     els.playgroundOutput.textContent = run.stderr || run.stdout || "(no output)";
     els.playgroundStatus.textContent = "Done";
   } catch (error) {
@@ -360,10 +414,10 @@ function renderResult(result) {
   `;
 }
 
-function authContinue() {
+async function authContinue() {
   const username = els.authUser.value.trim();
   const password = els.authPass.value;
-  els.loginMessage.textContent = "";
+  els.loginMessage.textContent = "Loading...";
   if (!username || !password) {
     els.loginMessage.textContent = "Please enter username and password.";
     return;
@@ -374,21 +428,30 @@ function authContinue() {
     switchView("admin");
     return;
   }
+  
+  const userRef = doc(db, "users", username.toLowerCase());
+  
   if (state.authMode === "signup") {
-    const users = readJson(USERS_KEY, []);
-    if (users.some((user) => user.username.toLowerCase() === username.toLowerCase())) {
+    const docSnap = await getDoc(userRef);
+    if (docSnap.exists()) {
       els.loginMessage.textContent = "That username is already registered.";
       return;
     }
-    users.push({ username, password, createdAt: new Date().toISOString(), active: true });
-    writeJson(USERS_KEY, users);
+    const newUser = { username, password, createdAt: new Date().toISOString(), active: true, role: "user" };
+    await setDoc(userRef, newUser);
     setSession({ username, role: "user" });
     els.authDialog.close();
     switchView("user");
     return;
   }
-  const user = readJson(USERS_KEY, []).find((item) => item.username === username && item.password === password);
-  if (!user) {
+  
+  const docSnap = await getDoc(userRef);
+  if (!docSnap.exists()) {
+    els.loginMessage.textContent = "Invalid username or password.";
+    return;
+  }
+  const user = docSnap.data();
+  if (user.password !== password) {
     els.loginMessage.textContent = "Invalid username or password.";
     return;
   }
@@ -422,33 +485,53 @@ function updateAuthUi() {
   els.signedInStatus.textContent = signedIn ? state.currentUser.username : "Guest";
 }
 
-function recordSolve(username, questionId) {
-  const solves = readJson(SOLVES_KEY, {});
-  solves[username] = [...new Set([...(solves[username] || []), questionId])];
-  writeJson(SOLVES_KEY, solves);
+async function recordSolve(username, questionId) {
+  const solveRef = doc(db, "solves", username.toLowerCase());
+  const docSnap = await getDoc(solveRef);
+  let solvedList = [];
+  if (docSnap.exists()) {
+    solvedList = docSnap.data().solved || [];
+  }
+  if (!solvedList.includes(questionId)) {
+    solvedList.push(questionId);
+    await setDoc(solveRef, { solved: solvedList });
+  }
   renderLeaderboard();
 }
 
-function renderLeaderboard() {
-  const users = readJson(USERS_KEY, []).filter((user) => user.active);
-  const solves = readJson(SOLVES_KEY, {});
-  const rows = users
-    .map((user) => ({ username: user.username, solved: (solves[user.username] || []).length }))
-    .sort((a, b) => b.solved - a.solved || a.username.localeCompare(b.username));
-  els.leaderboardCount.textContent = `${rows.length} users`;
-  els.leaderboardRows.innerHTML = rows.length
-    ? rows
-        .map(
-          (row, index) => `
-            <article class="leaderboard-row">
-              <strong>#${index + 1}</strong>
-              <span>${escapeHtml(row.username)}</span>
-              <b>${row.solved} solved</b>
-            </article>
-          `,
-        )
-        .join("")
-    : '<p class="hint">No registered users yet.</p>';
+async function renderLeaderboard() {
+  els.leaderboardRows.innerHTML = '<p class="hint">Loading...</p>';
+  try {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const users = usersSnap.docs.map(d => d.data()).filter(u => u.active);
+    
+    const solvesSnap = await getDocs(collection(db, "solves"));
+    const solves = {};
+    solvesSnap.docs.forEach(d => {
+      solves[d.id] = d.data().solved || [];
+    });
+    
+    const rows = users
+      .map((user) => ({ username: user.username, solved: (solves[user.username.toLowerCase()] || []).length }))
+      .sort((a, b) => b.solved - a.solved || a.username.localeCompare(b.username));
+      
+    els.leaderboardCount.textContent = `${rows.length} users`;
+    els.leaderboardRows.innerHTML = rows.length
+      ? rows
+          .map(
+            (row, index) => `
+              <article class="leaderboard-row">
+                <strong>#${index + 1}</strong>
+                <span>${escapeHtml(row.username)}</span>
+                <b>${row.solved} solved</b>
+              </article>
+            `,
+          )
+          .join("")
+      : '<p class="hint">No registered users yet.</p>';
+  } catch(e) {
+    els.leaderboardRows.innerHTML = '<p class="hint">Error loading leaderboard.</p>';
+  }
 }
 
 function addCase(target, input = "", output = "", isPublic = target.children.length < 2) {
@@ -482,9 +565,7 @@ async function saveQuestion() {
       starterCode: els.starterCode.value,
       testcases: readCases(els.testcaseEditor),
     });
-    const localQuestions = readJson(LOCAL_QUESTIONS_KEY, []).filter((item) => item.id !== question.id);
-    localQuestions.push(question);
-    writeJson(LOCAL_QUESTIONS_KEY, localQuestions);
+    await setDoc(doc(db, "questions", question.id), question);
     clearQuestionForm();
     await loadQuestions();
     renderAdmin();
@@ -494,7 +575,7 @@ async function saveQuestion() {
   }
 }
 
-function submitSuggestion() {
+async function submitSuggestion() {
   if (!state.currentUser || state.currentUser.role !== "user") {
     openAuth("login");
     els.suggestStatus.textContent = "Login before suggesting a question.";
@@ -508,15 +589,14 @@ function submitSuggestion() {
       starterCode: els.suggestStarter.value,
       testcases: readCases(els.suggestCaseEditor),
     });
-    const suggestions = readJson(SUGGESTIONS_KEY, []);
-    suggestions.push({
-      id: `${question.id}-${Date.now()}`,
+    const sugId = `${question.id}-${Date.now()}`;
+    await setDoc(doc(db, "suggestions", sugId), {
+      id: sugId,
       question,
       author: state.currentUser.username,
       status: "pending",
       createdAt: new Date().toISOString(),
     });
-    writeJson(SUGGESTIONS_KEY, suggestions);
     els.suggestTitle.value = "";
     els.suggestStatement.value = "";
     els.suggestStarter.value = "# Write Python code here\n";
@@ -579,70 +659,81 @@ function renderAdminQuestions() {
     : '<p class="hint">No questions available.</p>';
 }
 
-function renderSuggestions() {
-  const suggestions = readJson(SUGGESTIONS_KEY, []).filter((item) => item.status === "pending");
-  els.pendingSuggestions.innerHTML = suggestions.length
-    ? suggestions
-        .map(
-          (item) => `
-            <article class="review-card">
-              <div>
-                <strong>${escapeHtml(item.question.title)}</strong>
-                <span class="badge">${escapeHtml(item.question.difficulty)}</span>
-                <p>Suggested by ${escapeHtml(item.author)}</p>
-              </div>
-              <div class="row-actions">
-                <button class="primary-button compact" type="button" data-approve="${item.id}">Approve</button>
-                <button class="ghost-button compact" type="button" data-reject="${item.id}">Reject</button>
-              </div>
-            </article>
-          `,
-        )
-        .join("")
-    : '<p class="hint">No pending suggestions.</p>';
+async function renderSuggestions() {
+  els.pendingSuggestions.innerHTML = '<p class="hint">Loading...</p>';
+  try {
+    const snap = await getDocs(collection(db, "suggestions"));
+    const suggestions = snap.docs.map(d => d.data()).filter((item) => item.status === "pending");
+    els.pendingSuggestions.innerHTML = suggestions.length
+      ? suggestions
+          .map(
+            (item) => `
+              <article class="review-card">
+                <div>
+                  <strong>${escapeHtml(item.question.title)}</strong>
+                  <span class="badge">${escapeHtml(item.question.difficulty)}</span>
+                  <p>Suggested by ${escapeHtml(item.author)}</p>
+                </div>
+                <div class="row-actions">
+                  <button class="primary-button compact" type="button" data-approve="${item.id}">Approve</button>
+                  <button class="ghost-button compact" type="button" data-reject="${item.id}">Reject</button>
+                </div>
+              </article>
+            `,
+          )
+          .join("")
+      : '<p class="hint">No pending suggestions.</p>';
+  } catch(e) {
+    els.pendingSuggestions.innerHTML = '<p class="hint">Error loading suggestions.</p>';
+  }
 }
 
-function renderAdminUsers() {
-  const users = readJson(USERS_KEY, []);
-  const solves = readJson(SOLVES_KEY, {});
-  els.adminUsers.innerHTML = users.length
-    ? users
-        .map(
-          (user) => `
-            <article class="user-row">
-              <div>
-                <strong>${escapeHtml(user.username)}</strong>
-                <span>${(solves[user.username] || []).length} solved</span>
-              </div>
-              <button class="ghost-button compact" type="button" data-remove-user="${escapeHtml(user.username)}">Remove</button>
-            </article>
-          `,
-        )
-        .join("")
-    : '<p class="hint">No registered users.</p>';
+async function renderAdminUsers() {
+  els.adminUsers.innerHTML = '<p class="hint">Loading...</p>';
+  try {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const users = usersSnap.docs.map(d => d.data());
+    const solvesSnap = await getDocs(collection(db, "solves"));
+    const solves = {};
+    solvesSnap.docs.forEach(d => { solves[d.id] = d.data().solved || []; });
+    
+    els.adminUsers.innerHTML = users.length
+      ? users
+          .map(
+            (user) => `
+              <article class="user-row">
+                <div>
+                  <strong>${escapeHtml(user.username)}</strong>
+                  <span>${(solves[user.username.toLowerCase()] || []).length} solved</span>
+                </div>
+                <button class="ghost-button compact" type="button" data-remove-user="${escapeHtml(user.username)}">Remove</button>
+              </article>
+            `,
+          )
+          .join("")
+      : '<p class="hint">No registered users.</p>';
+  } catch(e) {
+    els.adminUsers.innerHTML = '<p class="hint">Error loading users.</p>';
+  }
 }
 
-function approveSuggestion(id, status) {
-  const suggestions = readJson(SUGGESTIONS_KEY, []);
-  const suggestion = suggestions.find((item) => item.id === id);
-  if (!suggestion) return;
-  suggestion.status = status;
-  writeJson(SUGGESTIONS_KEY, suggestions);
+async function approveSuggestion(id, status) {
+  const sugRef = doc(db, "suggestions", id);
+  const snap = await getDoc(sugRef);
+  if (!snap.exists()) return;
+  const suggestion = snap.data();
+  await updateDoc(sugRef, { status });
+  
   if (status === "approved") {
-    const questions = readJson(LOCAL_QUESTIONS_KEY, []).filter((item) => item.id !== suggestion.question.id);
-    questions.push(suggestion.question);
-    writeJson(LOCAL_QUESTIONS_KEY, questions);
+    await setDoc(doc(db, "questions", suggestion.question.id), suggestion.question);
     loadQuestions();
   }
   renderAdmin();
 }
 
-function removeUser(username) {
-  const users = readJson(USERS_KEY, []).filter((user) => user.username !== username);
-  writeJson(USERS_KEY, users);
-  const solves = readJson(SOLVES_KEY, {});
-  delete solves[username];
-  writeJson(SOLVES_KEY, solves);
+async function removeUser(username) {
+  await deleteDoc(doc(db, "users", username.toLowerCase()));
+  await deleteDoc(doc(db, "solves", username.toLowerCase()));
   if (state.currentUser?.username === username) logout();
   renderAdmin();
   renderLeaderboard();
@@ -665,17 +756,15 @@ function clearQuestionForm() {
 }
 
 function updateEditorMeta() {
-  const value = els.codeEditor.value;
-  const lines = value.split("\n");
-  els.lineNumbers.textContent = lines.map((_, index) => index + 1).join("\n");
-  els.lineStatus.textContent = `${lines.length} ${lines.length === 1 ? "line" : "lines"}`;
-  const pos = els.codeEditor.selectionStart;
-  const before = value.slice(0, pos).split("\n");
-  els.cursorStatus.textContent = `Ln ${before.length}, Col ${before[before.length - 1].length + 1}`;
+  if (!state.practiceEditor) return;
+  const lines = state.practiceEditor.lineCount();
+  els.lineStatus.textContent = `${lines} ${lines === 1 ? "line" : "lines"}`;
+  const cursor = state.practiceEditor.getCursor();
+  els.cursorStatus.textContent = `Ln ${cursor.line + 1}, Col ${cursor.ch + 1}`;
 }
 
 function formatCode() {
-  els.codeEditor.value = els.codeEditor.value
+  state.practiceEditor ? state.practiceEditor.setValue(question.starterCode || '# Write your Python solution here\n') : (state.practiceEditor ? state.practiceEditor.getValue() : els.codeEditor.value) = (state.practiceEditor ? state.practiceEditor.getValue() : els.codeEditor.value)
     .split("\n")
     .map((line) => line.replace(/\t/g, "    ").replace(/\s+$/g, ""))
     .join("\n");
@@ -683,54 +772,11 @@ function formatCode() {
 }
 
 async function copyCode() {
-  await navigator.clipboard.writeText(els.codeEditor.value);
+  await navigator.clipboard.writeText((state.practiceEditor ? state.practiceEditor.getValue() : els.codeEditor.value));
   els.runSummary.textContent = "Code copied";
   setTimeout(() => {
     if (els.runSummary.textContent === "Code copied") els.runSummary.textContent = "";
   }, 1200);
-}
-
-function handleEditorKeydown(event) {
-  const pairs = { "(": ")", "[": "]", "{": "}", '"': '"', "'": "'" };
-  const closers = new Set(Object.values(pairs));
-  const editor = els.codeEditor;
-  const start = editor.selectionStart;
-  const end = editor.selectionEnd;
-  const value = editor.value;
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "enter") {
-    event.preventDefault();
-    runCode();
-    return;
-  }
-  if (event.key === "Tab") {
-    event.preventDefault();
-    editor.setRangeText("    ", start, end, "end");
-    updateEditorMeta();
-    return;
-  }
-  if (event.key === "Enter") {
-    event.preventDefault();
-    const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-    const currentLine = value.slice(lineStart, start);
-    const baseIndent = currentLine.match(/^\s*/)[0];
-    const extraIndent = currentLine.trimEnd().endsWith(":") ? "    " : "";
-    editor.setRangeText(`\n${baseIndent}${extraIndent}`, start, end, "end");
-    updateEditorMeta();
-    return;
-  }
-  if (closers.has(event.key) && value[start] === event.key && start === end) {
-    event.preventDefault();
-    editor.setSelectionRange(start + 1, start + 1);
-    updateEditorMeta();
-    return;
-  }
-  if (pairs[event.key] && !event.ctrlKey && !event.metaKey && !event.altKey) {
-    event.preventDefault();
-    const selected = value.slice(start, end);
-    editor.setRangeText(`${event.key}${selected}${pairs[event.key]}`, start, end, "end");
-    editor.setSelectionRange(selected ? end + 2 : start + 1, selected ? end + 2 : start + 1);
-    updateEditorMeta();
-  }
 }
 
 function normalizeOutput(value) {
@@ -803,10 +849,7 @@ els.submitSuggestion.addEventListener("click", submitSuggestion);
 els.codeEditor.addEventListener("input", updateEditorMeta);
 els.codeEditor.addEventListener("click", updateEditorMeta);
 els.codeEditor.addEventListener("keyup", updateEditorMeta);
-els.codeEditor.addEventListener("scroll", () => {
-  els.lineNumbers.scrollTop = els.codeEditor.scrollTop;
-});
-els.codeEditor.addEventListener("keydown", handleEditorKeydown);
+
 els.saveQuestion.addEventListener("click", saveQuestion);
 els.pendingSuggestions.addEventListener("click", (event) => {
   const approve = event.target.closest("[data-approve]");
