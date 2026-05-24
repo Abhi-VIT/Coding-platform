@@ -262,7 +262,11 @@ function selectQuestion(id) {
   els.selectedDifficulty.textContent = question.difficulty;
   els.selectedTitle.textContent = question.title;
   els.selectedStatement.textContent = question.statement;
-  state.practiceEditor ? state.practiceEditor.setValue(question.starterCode || '# Write your Python solution here\n') : (state.practiceEditor ? state.practiceEditor.getValue() : els.codeEditor.value) = question.starterCode || "# Write your Python solution here\n";
+  if (state.practiceEditor) {
+    state.practiceEditor.setValue(question.starterCode || '# Write your Python solution here\n');
+  } else {
+    els.codeEditor.value = question.starterCode || "# Write your Python solution here\n";
+  }
   renderPublicTestcases(question.publicTestcases || []);
   els.results.innerHTML = "";
   els.runSummary.textContent = "";
@@ -764,10 +768,9 @@ function updateEditorMeta() {
 }
 
 function formatCode() {
-  state.practiceEditor ? state.practiceEditor.setValue(question.starterCode || '# Write your Python solution here\n') : (state.practiceEditor ? state.practiceEditor.getValue() : els.codeEditor.value) = (state.practiceEditor ? state.practiceEditor.getValue() : els.codeEditor.value)
-    .split("\n")
-    .map((line) => line.replace(/\t/g, "    ").replace(/\s+$/g, ""))
-    .join("\n");
+  if (!state.practiceEditor) return;
+  const val = state.practiceEditor.getValue().split("\n").map((line) => line.replace(/\t/g, "    ").replace(/\s+$/g, "")).join("\n");
+  state.practiceEditor.setValue(val);
   updateEditorMeta();
 }
 
