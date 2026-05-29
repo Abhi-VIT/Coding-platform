@@ -12,6 +12,9 @@ Python Compiler Lab is a web application for practicing Python coding questions.
 - Public and private testcase support
 - User question selection page
 - VS Code-style Python editor
+- Auto-closing brackets, parentheses, quotes, and keyword/variable suggestions
+- Saved accepted code for solved questions
+- Company-specific practice tab with questions inspired by large-company coding rounds
 - Smart editor features:
   - auto indentation after `:`
   - auto closing brackets and quotes

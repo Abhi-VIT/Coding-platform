@@ -19,9 +19,50 @@ const ADMIN_PASSWORD_KEY = "compilerLabAdminPass";
 const USERS_KEY = "compilerLabUsers";
 const SESSION_KEY = "compilerLabSession";
 const SOLVES_KEY = "compilerLabSolves";
+const SUBMISSIONS_KEY = "compilerLabSubmissions";
 const LOCAL_QUESTIONS_KEY = "compilerLabQuestions";
 const SUGGESTIONS_KEY = "compilerLabSuggestions";
 const STATIC_QUESTIONS_URL = "../data/questions.json";
+const ALL_COMPANIES = "All Companies";
+
+const COMPANY_QUESTIONS = [
+  makeCompanyQuestion("google-two-sum", "Google", "Two Sum Pair", "Easy", "Read n, then n integers, then a target. Print two zero-based indices whose values add to the target, or -1 if no pair exists.", "4\n2 7 11 15\n9\n", "0 1\n"),
+  makeCompanyQuestion("google-valid-parentheses", "Google", "Valid Parentheses", "Easy", "Read a string containing brackets. Print YES if every opening bracket is closed in the correct order, otherwise print NO.", "({[]})\n", "YES\n"),
+  makeCompanyQuestion("google-longest-substring", "Google", "Longest Unique Substring", "Medium", "Read a string and print the length of the longest substring without repeating characters.", "abcabcbb\n", "3\n"),
+  makeCompanyQuestion("meta-merge-intervals", "Meta", "Merge Intervals", "Medium", "Read n intervals and print merged non-overlapping intervals sorted by start. Each output line should contain start and end.", "4\n1 3\n2 6\n8 10\n15 18\n", "1 6\n8 10\n15 18\n"),
+  makeCompanyQuestion("meta-binary-tree-level-order", "Meta", "Level Order Values", "Medium", "Read a space-separated level-order binary tree where null means missing. Print each level on a new line.", "3 9 20 null null 15 7\n", "3\n9 20\n15 7\n"),
+  makeCompanyQuestion("meta-move-zeroes", "Meta", "Move Zeroes", "Easy", "Read n and an array. Move all zeroes to the end while keeping non-zero order, then print the array.", "5\n0 1 0 3 12\n", "1 3 12 0 0\n"),
+  makeCompanyQuestion("amazon-kth-largest", "Amazon", "Kth Largest Element", "Medium", "Read n, an array, and k. Print the kth largest value.", "6\n3 2 1 5 6 4\n2\n", "5\n"),
+  makeCompanyQuestion("amazon-product-array", "Amazon", "Product Except Self", "Medium", "Read n and an array. Print the product of all elements except self for every position without using division.", "4\n1 2 3 4\n", "24 12 8 6\n"),
+  makeCompanyQuestion("amazon-first-non-repeating", "Amazon", "First Non-Repeating Character", "Easy", "Read a string and print the first character that appears once, or -1 if none exists.", "swiss\n", "w\n"),
+  makeCompanyQuestion("tcs-count-words", "TCS", "Count Words", "Easy", "Read one line and print how many words it contains.", "TCS digital coding round\n", "4\n"),
+  makeCompanyQuestion("tcs-armstrong-number", "TCS", "Armstrong Number", "Easy", "Read an integer n. Print YES if it is an Armstrong number, otherwise print NO.", "153\n", "YES\n"),
+  makeCompanyQuestion("tcs-series-sum", "TCS", "Series Sum", "Easy", "Read n and print the sum of squares from 1 to n.", "4\n", "30\n"),
+  makeCompanyQuestion("infosys-anagram-check", "Infosys", "Anagram Check", "Easy", "Read two strings. Print YES if they are anagrams after ignoring case, otherwise print NO.", "listen\nsilent\n", "YES\n"),
+  makeCompanyQuestion("infosys-second-largest", "Infosys", "Second Largest", "Easy", "Read n and an array. Print the second largest distinct value, or -1 if it does not exist.", "5\n7 3 9 9 5\n", "7\n"),
+  makeCompanyQuestion("infosys-matrix-diagonal", "Infosys", "Matrix Diagonal Difference", "Easy", "Read n and an n x n matrix. Print the absolute difference between primary and secondary diagonal sums.", "3\n11 2 4\n4 5 6\n10 8 -12\n", "15\n"),
+  makeCompanyQuestion("wipro-reverse-words", "Wipro", "Reverse Words", "Easy", "Read a sentence and print the words in reverse order.", "welcome to wipro\n", "wipro to welcome\n"),
+  makeCompanyQuestion("wipro-gcd-lcm", "Wipro", "GCD and LCM", "Easy", "Read two integers and print their GCD and LCM separated by a space.", "12 18\n", "6 36\n"),
+  makeCompanyQuestion("wipro-remove-duplicates", "Wipro", "Remove Duplicate Characters", "Easy", "Read a string and print it after removing repeated characters while keeping first occurrence order.", "programming\n", "progamin\n"),
+  makeCompanyQuestion("apple-rotate-array", "Apple", "Rotate Array", "Medium", "Read n, an array, and k. Rotate the array right by k positions and print it.", "5\n1 2 3 4 5\n2\n", "4 5 1 2 3\n"),
+  makeCompanyQuestion("apple-valid-palindrome", "Apple", "Clean Palindrome", "Easy", "Read a string. Considering only alphanumeric characters and ignoring case, print YES if it is a palindrome.", "A man, a plan, a canal: Panama\n", "YES\n"),
+  makeCompanyQuestion("apple-stock-profit", "Apple", "Best Time to Buy Stock", "Easy", "Read n and daily prices. Print the maximum profit from one buy and one sell.", "6\n7 1 5 3 6 4\n", "5\n"),
+  makeCompanyQuestion("netflix-top-k-frequency", "Netflix", "Top K Frequent Numbers", "Medium", "Read n, an array, and k. Print the k most frequent numbers sorted by frequency descending then value ascending.", "6\n1 1 1 2 2 3\n2\n", "1 2\n"),
+  makeCompanyQuestion("netflix-longest-repeating", "Netflix", "Longest Repeating Run", "Easy", "Read a string and print the length of the longest run of the same consecutive character.", "aaabbccccd\n", "4\n"),
+  makeCompanyQuestion("netflix-watch-history", "Netflix", "Unique Watch Order", "Easy", "Read n and n movie IDs. Print unique IDs in first-watch order.", "7\nm1 m2 m1 m3 m2 m4 m4\n", "m1 m2 m3 m4\n"),
+  makeCompanyQuestion("alphabet-word-ladder-lite", "Alphabet", "One Edit Apart", "Medium", "Read two words. Print YES if they are zero or one edit apart by insert, delete, or replace.", "pale\nple\n", "YES\n"),
+  makeCompanyQuestion("alphabet-search-prefix", "Alphabet", "Prefix Match Count", "Easy", "Read n words, then a prefix. Print how many words start with that prefix.", "5\napp apple apply bat ape\napp\n", "3\n"),
+  makeCompanyQuestion("alphabet-isomorphic", "Alphabet", "Isomorphic Strings", "Medium", "Read two strings. Print YES if characters can be mapped one-to-one from the first string to the second.", "egg\nadd\n", "YES\n"),
+  makeCompanyQuestion("microsoft-missing-number", "Microsoft", "Missing Number", "Easy", "Read n and n distinct numbers from 0 to n. Print the missing number.", "3\n3 0 1\n", "2\n"),
+  makeCompanyQuestion("microsoft-spiral-matrix", "Microsoft", "Spiral Matrix", "Medium", "Read rows, columns, and a matrix. Print values in spiral order.", "3 3\n1 2 3\n4 5 6\n7 8 9\n", "1 2 3 6 9 8 7 4 5\n"),
+  makeCompanyQuestion("adobe-compress-string", "Adobe", "Compress String", "Easy", "Read a string and print run-length encoding using character followed by count.", "aaabbc\n", "a3b2c1\n"),
+  makeCompanyQuestion("oracle-balanced-array", "Oracle", "Equilibrium Index", "Medium", "Read n and an array. Print the first index where left sum equals right sum, or -1.", "5\n1 3 5 2 2\n", "2\n"),
+  makeCompanyQuestion("ibm-binary-search", "IBM", "Binary Search", "Easy", "Read n, a sorted array, and target. Print the target index, or -1.", "5\n1 3 5 7 9\n7\n", "3\n"),
+  makeCompanyQuestion("flipkart-cart-total", "Flipkart", "Cart Discount", "Easy", "Read n prices. Apply 10 percent discount if total is at least 1000. Print the final integer total.", "3\n300 400 500\n", "1080\n"),
+  makeCompanyQuestion("uber-min-platforms", "Uber", "Minimum Platforms", "Medium", "Read n, arrival times, and departure times as integers. Print the minimum platforms needed.", "6\n900 940 950 1100 1500 1800\n910 1200 1120 1130 1900 2000\n", "3\n"),
+  makeCompanyQuestion("salesforce-common-elements", "Salesforce", "Common Sorted Elements", "Easy", "Read sizes and two sorted arrays. Print common distinct elements.", "5 4\n1 2 2 3 4\n2 2 4 6\n", "2 4\n"),
+  makeCompanyQuestion("paytm-currency-count", "Paytm", "Minimum Notes", "Easy", "Read an amount and print the minimum number of Indian currency notes using 2000, 500, 200, 100, 50, 20, 10, 5, 2, 1.", "786\n", "6\n")
+];
 
 const state = {
   questions: [],
@@ -34,12 +75,16 @@ const state = {
   pyodideLoading: null,
   practiceEditor: null,
   playgroundEditor: null,
+  companyFilter: ALL_COMPANIES,
+  userSolved: [],
+  userSavedCode: {},
 };
 
 const els = {
   homeLogo: document.querySelector("#homeLogo"),
   homeNav: document.querySelector("#homeNav"),
   userNav: document.querySelector("#userNav"),
+  companyNav: document.querySelector("#companyNav"),
   playgroundNav: document.querySelector("#playgroundNav"),
   leaderboardNav: document.querySelector("#leaderboardNav"),
   suggestNav: document.querySelector("#suggestNav"),
@@ -50,6 +95,7 @@ const els = {
   homeSignupCta: document.querySelector("#homeSignupCta"),
   homeView: document.querySelector("#homeView"),
   userView: document.querySelector("#userView"),
+  companyView: document.querySelector("#companyView"),
   playgroundView: document.querySelector("#playgroundView"),
   leaderboardView: document.querySelector("#leaderboardView"),
   suggestView: document.querySelector("#suggestView"),
@@ -66,11 +112,19 @@ const els = {
   lineStatus: document.querySelector("#lineStatus"),
   signedInStatus: document.querySelector("#signedInStatus"),
   resetCode: document.querySelector("#resetCode"),
+  viewSavedCode: document.querySelector("#viewSavedCode"),
   formatCode: document.querySelector("#formatCode"),
   copyCode: document.querySelector("#copyCode"),
   runCode: document.querySelector("#runCode"),
   runSummary: document.querySelector("#runSummary"),
   results: document.querySelector("#results"),
+  savedCodePanel: document.querySelector("#savedCodePanel"),
+  savedCodeStatus: document.querySelector("#savedCodeStatus"),
+  savedCodeOutput: document.querySelector("#savedCodeOutput"),
+  companyFilters: document.querySelector("#companyFilters"),
+  companyQuestions: document.querySelector("#companyQuestions"),
+  companyTitle: document.querySelector("#companyTitle"),
+  companyCount: document.querySelector("#companyCount"),
   playgroundCode: document.querySelector("#playgroundCode"),
   playgroundInput: document.querySelector("#playgroundInput"),
   playgroundStatus: document.querySelector("#playgroundStatus"),
@@ -118,19 +172,21 @@ function ensureAdminCredentials() {
 }
 
 function switchView(view) {
-  const views = ["home", "user", "playground", "leaderboard", "suggest", "admin"];
+  const views = ["home", "user", "company", "playground", "leaderboard", "suggest", "admin"];
   views.forEach((name) => {
     els[`${name}View`].classList.toggle("active", name === view);
   });
   const navs = {
     home: els.homeNav,
     user: els.userNav,
+    company: els.companyNav,
     playground: els.playgroundNav,
     leaderboard: els.leaderboardNav,
     suggest: els.suggestNav,
   };
   Object.entries(navs).forEach(([name, button]) => button.classList.toggle("active", name === view));
   if (view === "user" && !state.practiceEditor) initPracticeEditor();
+  if (view === "company") renderCompanyQuestions();
   if (view === "playground" && !state.playgroundEditor) initPlaygroundEditor();
   if (view === "leaderboard") renderLeaderboard();
   if (view === "admin") showAdminPanel();
@@ -143,7 +199,10 @@ function initPracticeEditor() {
     lineNumbers: true,
     indentUnit: 4,
     matchBrackets: true,
+    autoCloseBrackets: true,
+    extraKeys: { "Ctrl-Space": "autocomplete" },
   });
+  attachPythonHints(state.practiceEditor);
   state.practiceEditor.on("change", updateEditorMeta);
   state.practiceEditor.on("cursorActivity", updateEditorMeta);
 }
@@ -155,7 +214,45 @@ function initPlaygroundEditor() {
     lineNumbers: true,
     indentUnit: 4,
     matchBrackets: true,
+    autoCloseBrackets: true,
+    extraKeys: { "Ctrl-Space": "autocomplete" },
   });
+  attachPythonHints(state.playgroundEditor);
+}
+
+function attachPythonHints(editor) {
+  editor.on("inputRead", (cm, event) => {
+    if (!event.text.join("").match(/[A-Za-z_]/)) return;
+    if (cm.state.completionActive) return;
+    cm.showHint({
+      hint: getPythonHints,
+      completeSingle: false,
+    });
+  });
+}
+
+function getPythonHints(editor) {
+  const cursor = editor.getCursor();
+  const token = editor.getTokenAt(cursor);
+  const start = token.start;
+  const end = cursor.ch;
+  const current = token.string.slice(0, end - start);
+  const code = editor.getValue();
+  const keywords = [
+    "if", "elif", "else", "for", "while", "def", "return", "class", "try", "except", "finally",
+    "with", "as", "import", "from", "in", "not", "and", "or", "True", "False", "None", "break",
+    "continue", "pass", "print", "input", "range", "len", "map", "list", "set", "dict", "int",
+    "str", "float", "sum", "max", "min", "sorted", "enumerate", "zip", "append", "split", "join"
+  ];
+  const variables = [...code.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\s*(?==|\(|,|:)/g)].map((match) => match[1]);
+  const suggestions = [...new Set([...keywords, ...variables])]
+    .filter((word) => word !== current && word.startsWith(current))
+    .sort();
+  return {
+    list: suggestions,
+    from: CodeMirror.Pos(cursor.line, start),
+    to: CodeMirror.Pos(cursor.line, end),
+  };
 }
 
 
@@ -210,9 +307,10 @@ async function loadStaticQuestions() {
     approvedSuggestions = sSnap.docs.map(d => d.data()).filter((item) => item.status === "approved");
   } catch(e) { console.error(e); }
   
-  const merged = [...seedQuestions, ...localQuestions, ...approvedSuggestions.map((item) => item.question)];
+  const merged = [...seedQuestions, ...COMPANY_QUESTIONS, ...localQuestions, ...approvedSuggestions.map((item) => item.question)];
   state.fullQuestions = dedupeQuestions(merged);
   state.questions = state.fullQuestions.map(toPublicQuestion);
+  renderCompanyQuestions();
 }
 
 function dedupeQuestions(questions) {
@@ -227,6 +325,7 @@ function toPublicQuestion(question) {
     difficulty: question.difficulty,
     statement: question.statement,
     starterCode: question.starterCode || "",
+    company: question.company || "",
     testcaseCount: (question.testcases || []).length,
     publicTestcaseCount: publicTestcases.length,
     publicTestcases,
@@ -242,16 +341,19 @@ function publicTestcasesFor(question) {
 function renderQuestions() {
   els.questionCount.textContent = `${state.questions.length} available`;
   els.questions.innerHTML = state.questions
-    .map(
-      (q) => `
+    .map((q) => {
+      const solved = state.userSolved.includes(q.id);
+      return `
         <button class="question-card ${q.id === state.selectedId ? "active" : ""}" type="button" data-id="${q.id}">
+          ${solved ? '<span class="solved-pill">Done</span>' : ""}
           <strong>${escapeHtml(q.title)}</strong>
+          ${q.company ? `<span class="badge company-badge">${escapeHtml(q.company)}</span>` : ""}
           <span class="badge">${escapeHtml(q.difficulty)}</span>
           <span class="badge accent">${q.publicTestcaseCount} public</span>
           <span class="badge private">${q.testcaseCount - q.publicTestcaseCount} private</span>
         </button>
-      `,
-    )
+      `;
+    })
     .join("");
 }
 
@@ -270,6 +372,9 @@ function selectQuestion(id) {
   renderPublicTestcases(question.publicTestcases || []);
   els.results.innerHTML = "";
   els.runSummary.textContent = "";
+  els.savedCodePanel.classList.add("hidden");
+  els.savedCodeOutput.textContent = "";
+  els.savedCodeStatus.textContent = state.userSolved.includes(question.id) ? "Solved" : "Not solved yet";
   renderQuestions();
   updateEditorMeta();
 }
@@ -312,7 +417,10 @@ async function runCode() {
     const data = await runStaticJudge(question.id, (state.practiceEditor ? state.practiceEditor.getValue() : els.codeEditor.value));
     els.runSummary.textContent = `${data.passed}/${data.total} testcases passed`;
     els.results.innerHTML = data.results.map(renderResult).join("");
-    if (data.passed === data.total) recordSolve(state.currentUser.username, question.id);
+    if (data.passed === data.total) {
+      await recordSolve(state.currentUser.username, question.id, state.practiceEditor ? state.practiceEditor.getValue() : els.codeEditor.value);
+      els.savedCodeStatus.textContent = "Solved";
+    }
   } catch (error) {
     els.runSummary.textContent = error.message;
   } finally {
@@ -472,12 +580,17 @@ function setSession(user) {
   state.currentUser = user;
   localStorage.setItem(SESSION_KEY, JSON.stringify(user));
   updateAuthUi();
+  loadCurrentUserProgress();
 }
 
 function logout() {
   state.currentUser = null;
+  state.userSolved = [];
+  state.userSavedCode = {};
   localStorage.removeItem(SESSION_KEY);
   updateAuthUi();
+  renderQuestions();
+  renderCompanyQuestions();
   switchView("home");
 }
 
@@ -489,17 +602,62 @@ function updateAuthUi() {
   els.signedInStatus.textContent = signedIn ? state.currentUser.username : "Guest";
 }
 
-async function recordSolve(username, questionId) {
+async function loadCurrentUserProgress() {
+  state.userSolved = [];
+  state.userSavedCode = {};
+  if (!state.currentUser || state.currentUser.role !== "user") {
+    renderQuestions();
+    renderCompanyQuestions();
+    return;
+  }
+  try {
+    const snap = await getDoc(doc(db, "solves", state.currentUser.username.toLowerCase()));
+    if (snap.exists()) {
+      state.userSolved = snap.data().solved || [];
+      state.userSavedCode = snap.data().savedCode || {};
+    }
+  } catch (error) {
+    console.error(error);
+  }
+  renderQuestions();
+  renderCompanyQuestions();
+}
+
+function showSavedCode() {
+  const code = state.userSavedCode[state.selectedId];
+  els.savedCodePanel.classList.remove("hidden");
+  if (!state.currentUser || state.currentUser.role !== "user") {
+    els.savedCodeStatus.textContent = "Login required";
+    els.savedCodeOutput.textContent = "Login with your learner account to view saved accepted code.";
+    return;
+  }
+  if (!code) {
+    els.savedCodeStatus.textContent = "No accepted code";
+    els.savedCodeOutput.textContent = "Solve this question first. Your accepted code will be saved here.";
+    return;
+  }
+  els.savedCodeStatus.textContent = "Accepted submission";
+  els.savedCodeOutput.textContent = code;
+}
+
+async function recordSolve(username, questionId, code) {
   const solveRef = doc(db, "solves", username.toLowerCase());
   const docSnap = await getDoc(solveRef);
   let solvedList = [];
+  let savedCode = {};
   if (docSnap.exists()) {
     solvedList = docSnap.data().solved || [];
+    savedCode = docSnap.data().savedCode || {};
   }
   if (!solvedList.includes(questionId)) {
     solvedList.push(questionId);
-    await setDoc(solveRef, { solved: solvedList });
   }
+  savedCode[questionId] = code;
+  await setDoc(solveRef, { solved: solvedList, savedCode });
+  state.userSolved = solvedList;
+  state.userSavedCode = savedCode;
+  renderQuestions();
+  renderCompanyQuestions();
   renderLeaderboard();
 }
 
@@ -536,6 +694,64 @@ async function renderLeaderboard() {
   } catch(e) {
     els.leaderboardRows.innerHTML = '<p class="hint">Error loading leaderboard.</p>';
   }
+}
+
+function renderCompanyQuestions() {
+  if (!els.companyFilters || !els.companyQuestions) return;
+  const companyQuestions = state.questions.filter((question) => question.company);
+  const companies = [ALL_COMPANIES, ...new Set(companyQuestions.map((question) => question.company).sort())];
+  els.companyCount.textContent = `${companyQuestions.length} questions`;
+  els.companyFilters.innerHTML = companies
+    .map(
+      (company) => `
+        <button class="question-card ${state.companyFilter === company ? "active" : ""}" type="button" data-company="${escapeHtml(company)}">
+          <strong>${escapeHtml(company)}</strong>
+          <span class="badge">${company === ALL_COMPANIES ? companyQuestions.length : companyQuestions.filter((question) => question.company === company).length} questions</span>
+        </button>
+      `,
+    )
+    .join("");
+
+  const visibleQuestions =
+    state.companyFilter === ALL_COMPANIES
+      ? companyQuestions
+      : companyQuestions.filter((question) => question.company === state.companyFilter);
+
+  els.companyTitle.textContent = state.companyFilter === ALL_COMPANIES ? "All Company Questions" : `${state.companyFilter} Questions`;
+  els.companyQuestions.innerHTML = visibleQuestions.length
+    ? visibleQuestions
+        .map((question) => {
+          const solved = state.userSolved.includes(question.id);
+          return `
+            <article class="company-card">
+              <div>
+                <span class="badge company-badge">${escapeHtml(question.company)}</span>
+                <span class="badge">${escapeHtml(question.difficulty)}</span>
+                ${solved ? '<span class="solved-pill inline">Done</span>' : ""}
+              </div>
+              <h3>${escapeHtml(question.title)}</h3>
+              <p>${escapeHtml(question.statement)}</p>
+              <button class="primary-button compact" type="button" data-practice-question="${escapeHtml(question.id)}">Practice</button>
+            </article>
+          `;
+        })
+        .join("")
+    : '<p class="hint">No company questions found.</p>';
+}
+
+function makeCompanyQuestion(id, company, title, difficulty, statement, input, output) {
+  return {
+    id,
+    company,
+    title,
+    difficulty,
+    statement,
+    starterCode: "# Write your Python solution here\n",
+    testcases: [
+      { input, output, isPublic: true },
+      { input, output, isPublic: false },
+    ],
+  };
 }
 
 function addCase(target, input = "", output = "", isPublic = target.children.length < 2) {
@@ -845,6 +1061,7 @@ function escapeHtml(value) {
 els.homeLogo.addEventListener("click", () => switchView("home"));
 els.homeNav.addEventListener("click", () => switchView("home"));
 els.userNav.addEventListener("click", () => requireUser("user"));
+els.companyNav.addEventListener("click", () => switchView("company"));
 els.playgroundNav.addEventListener("click", () => switchView("playground"));
 els.leaderboardNav.addEventListener("click", () => switchView("leaderboard"));
 els.suggestNav.addEventListener("click", () => switchView("suggest"));
@@ -862,7 +1079,21 @@ els.questions.addEventListener("click", (event) => {
   const card = event.target.closest("[data-id]");
   if (card) selectQuestion(card.dataset.id);
 });
+els.companyFilters.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-company]");
+  if (!button) return;
+  state.companyFilter = button.dataset.company;
+  renderCompanyQuestions();
+});
+els.companyQuestions.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-practice-question]");
+  if (!button) return;
+  state.selectedId = button.dataset.practiceQuestion;
+  switchView("user");
+  selectQuestion(state.selectedId);
+});
 els.resetCode.addEventListener("click", () => selectQuestion(state.selectedId));
+els.viewSavedCode.addEventListener("click", showSavedCode);
 els.formatCode.addEventListener("click", formatCode);
 els.copyCode.addEventListener("click", copyCode);
 els.runCode.addEventListener("click", runCode);
@@ -894,3 +1125,4 @@ addCase(els.suggestCaseEditor);
 addCase(els.suggestCaseEditor);
 updateAuthUi();
 loadQuestions();
+loadCurrentUserProgress();

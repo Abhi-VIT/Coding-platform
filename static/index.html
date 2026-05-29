@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/hint/show-hint.min.css">
   </head>
   <body>
     <header class="topbar">
@@ -20,6 +21,7 @@
       <nav class="nav-actions" aria-label="Main navigation">
         <button id="homeNav" class="nav-link active" type="button">Home</button>
         <button id="userNav" class="nav-link" type="button">Practice</button>
+        <button id="companyNav" class="nav-link" type="button">Companies</button>
         <button id="playgroundNav" class="nav-link" type="button">Playground</button>
         <button id="leaderboardNav" class="nav-link" type="button">Leaderboard</button>
         <button id="suggestNav" class="nav-link" type="button">Suggest</button>
@@ -99,6 +101,7 @@ solve()</code></pre>
                 <button id="formatCode" class="icon-button" type="button" title="Format indentation">Format</button>
                 <button id="copyCode" class="icon-button" type="button" title="Copy code">Copy</button>
                 <button id="resetCode" class="icon-button" type="button" title="Reset code">Reset</button>
+                <button id="viewSavedCode" class="icon-button" type="button" title="View saved accepted code">Saved</button>
               </div>
             </div>
             <div class="editor-body">
@@ -118,6 +121,32 @@ solve()</code></pre>
           </div>
 
           <section id="results" class="results" aria-live="polite"></section>
+          <section id="savedCodePanel" class="results hidden" aria-live="polite">
+            <div class="panel-heading">
+              <h3>Saved Accepted Code</h3>
+              <span id="savedCodeStatus"></span>
+            </div>
+            <pre id="savedCodeOutput"></pre>
+          </section>
+        </section>
+      </section>
+
+      <section id="companyView" class="view company-layout" aria-label="Company questions">
+        <aside class="question-list">
+          <div class="panel-heading">
+            <h2>Companies</h2>
+            <span id="companyCount"></span>
+          </div>
+          <div id="companyFilters"></div>
+        </aside>
+        <section class="tool-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Company Practice</span>
+              <h2 id="companyTitle">All Company Questions</h2>
+            </div>
+          </div>
+          <div id="companyQuestions" class="company-question-grid"></div>
         </section>
       </section>
 
@@ -257,6 +286,8 @@ print("Hello", name)</textarea></label>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
-    <script type="module" src="app.js?v=3"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/hint/show-hint.min.js"></script>
+    <script type="module" src="app.js?v=4"></script>
   </body>
 </html>
