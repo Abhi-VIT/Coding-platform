@@ -316,6 +316,11 @@ h3 {
   margin-bottom: 7px;
 }
 
+.question-number {
+  color: var(--accent-2);
+  font-weight: 900;
+}
+
 .solved-pill {
   float: right;
   display: inline-flex;
@@ -618,6 +623,12 @@ h3 {
   border-color: rgba(255, 255, 255, 0.24);
 }
 
+.danger-button {
+  color: var(--danger);
+  border-color: #fecaca;
+  background: #fff5f5;
+}
+
 .compact {
   min-height: 38px;
   padding: 0 13px;
@@ -780,10 +791,21 @@ textarea {
 
 .admin-question {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
+}
+
+.admin-question strong,
+.admin-question span {
+  display: block;
+}
+
+.admin-question span {
+  margin-top: 5px;
+  color: var(--muted);
 }
 
 .leaderboard-list,

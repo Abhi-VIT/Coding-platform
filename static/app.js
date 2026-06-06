@@ -306,9 +306,15 @@ async function loadStaticQuestions() {
     const sSnap = await getDocs(collection(db, "suggestions"));
     approvedSuggestions = sSnap.docs.map(d => d.data()).filter((item) => item.status === "approved");
   } catch(e) { console.error(e); }
+
+  let removedQuestionIds = [];
+  try {
+    const removedSnap = await getDocs(collection(db, "removedQuestions"));
+    removedQuestionIds = removedSnap.docs.map((d) => d.id);
+  } catch(e) { console.error(e); }
   
   const merged = [...seedQuestions, ...COMPANY_QUESTIONS, ...localQuestions, ...approvedSuggestions.map((item) => item.question)];
-  state.fullQuestions = dedupeQuestions(merged);
+  state.fullQuestions = dedupeQuestions(merged).filter((question) => !removedQuestionIds.includes(question.id));
   state.questions = state.fullQuestions.map(toPublicQuestion);
   renderCompanyQuestions();
 }
@@ -341,12 +347,12 @@ function publicTestcasesFor(question) {
 function renderQuestions() {
   els.questionCount.textContent = `${state.questions.length} available`;
   els.questions.innerHTML = state.questions
-    .map((q) => {
+    .map((q, index) => {
       const solved = state.userSolved.includes(q.id);
       return `
         <button class="question-card ${q.id === state.selectedId ? "active" : ""}" type="button" data-id="${q.id}">
           ${solved ? '<span class="solved-pill">Done</span>' : ""}
-          <strong>${escapeHtml(q.title)}</strong>
+          <strong><span class="question-number">${index + 1}.</span> ${escapeHtml(q.title)}</strong>
           ${q.company ? `<span class="badge company-badge">${escapeHtml(q.company)}</span>` : ""}
           <span class="badge">${escapeHtml(q.difficulty)}</span>
           <span class="badge accent">${q.publicTestcaseCount} public</span>
@@ -720,7 +726,7 @@ function renderCompanyQuestions() {
   els.companyTitle.textContent = state.companyFilter === ALL_COMPANIES ? "All Company Questions" : `${state.companyFilter} Questions`;
   els.companyQuestions.innerHTML = visibleQuestions.length
     ? visibleQuestions
-        .map((question) => {
+        .map((question, index) => {
           const solved = state.userSolved.includes(question.id);
           return `
             <article class="company-card">
@@ -729,7 +735,7 @@ function renderCompanyQuestions() {
                 <span class="badge">${escapeHtml(question.difficulty)}</span>
                 ${solved ? '<span class="solved-pill inline">Done</span>' : ""}
               </div>
-              <h3>${escapeHtml(question.title)}</h3>
+              <h3><span class="question-number">${index + 1}.</span> ${escapeHtml(question.title)}</h3>
               <p>${escapeHtml(question.statement)}</p>
               <button class="primary-button compact" type="button" data-practice-question="${escapeHtml(question.id)}">Practice</button>
             </article>
@@ -785,6 +791,7 @@ async function saveQuestion() {
       starterCode: els.starterCode.value,
       testcases: readCases(els.testcaseEditor),
     });
+    await deleteDoc(doc(db, "removedQuestions", question.id));
     await setDoc(doc(db, "questions", question.id), question);
     clearQuestionForm();
     await loadQuestions();
@@ -868,10 +875,13 @@ function renderAdminQuestions() {
   els.adminQuestions.innerHTML = state.fullQuestions.length
     ? state.fullQuestions
         .map(
-          (q) => `
+          (q, index) => `
           <div class="admin-question">
-            <strong>${escapeHtml(q.title)}</strong>
-            <span>${escapeHtml(q.difficulty)} - ${(q.testcases || []).length} tests</span>
+            <div>
+              <strong><span class="question-number">${index + 1}.</span> ${escapeHtml(q.title)}</strong>
+              <span>${q.company ? `${escapeHtml(q.company)} - ` : ""}${escapeHtml(q.difficulty)} - ${(q.testcases || []).length} tests</span>
+            </div>
+            <button class="ghost-button compact danger-button" type="button" data-remove-question="${escapeHtml(q.id)}">Remove</button>
           </div>
         `,
         )
@@ -966,6 +976,7 @@ async function approveSuggestion(id, status) {
   await updateDoc(sugRef, { status });
   
   if (status === "approved") {
+    await deleteDoc(doc(db, "removedQuestions", suggestion.question.id));
     await setDoc(doc(db, "questions", suggestion.question.id), suggestion.question);
     loadQuestions();
   }
@@ -978,6 +989,30 @@ async function removeUser(username) {
   if (state.currentUser?.username === username) logout();
   renderAdmin();
   renderLeaderboard();
+}
+
+async function removeQuestion(questionId) {
+  els.adminStatus.textContent = "Removing...";
+  try {
+    await setDoc(doc(db, "removedQuestions", questionId), {
+      id: questionId,
+      removedAt: new Date().toISOString(),
+      removedBy: state.currentUser?.username || "admin",
+    });
+    await deleteDoc(doc(db, "questions", questionId));
+    state.fullQuestions = state.fullQuestions.filter((question) => question.id !== questionId);
+    state.questions = state.questions.filter((question) => question.id !== questionId);
+    if (state.selectedId === questionId) {
+      state.selectedId = state.questions[0]?.id || null;
+      selectQuestion(state.selectedId);
+    }
+    renderQuestions();
+    renderCompanyQuestions();
+    renderAdminQuestions();
+    els.adminStatus.textContent = "Question removed";
+  } catch (error) {
+    els.adminStatus.textContent = error.message;
+  }
 }
 
 function switchAdminSection(id) {
@@ -1106,6 +1141,10 @@ els.codeEditor.addEventListener("click", updateEditorMeta);
 els.codeEditor.addEventListener("keyup", updateEditorMeta);
 
 els.saveQuestion.addEventListener("click", saveQuestion);
+els.adminQuestions.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-remove-question]");
+  if (button) removeQuestion(button.dataset.removeQuestion);
+});
 els.pendingSuggestions.addEventListener("click", (event) => {
   const approve = event.target.closest("[data-approve]");
   const reject = event.target.closest("[data-reject]");
