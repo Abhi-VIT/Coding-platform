@@ -76,6 +76,8 @@ const state = {
   practiceEditor: null,
   playgroundEditor: null,
   companyFilter: ALL_COMPANIES,
+  questionSearch: "",
+  companySearch: "",
   userSolved: [],
   userSavedCode: {},
 };
@@ -101,6 +103,7 @@ const els = {
   suggestView: document.querySelector("#suggestView"),
   adminView: document.querySelector("#adminView"),
   questions: document.querySelector("#questions"),
+  questionSearch: document.querySelector("#questionSearch"),
   questionCount: document.querySelector("#questionCount"),
   selectedDifficulty: document.querySelector("#selectedDifficulty"),
   selectedTitle: document.querySelector("#selectedTitle"),
@@ -112,6 +115,7 @@ const els = {
   lineStatus: document.querySelector("#lineStatus"),
   signedInStatus: document.querySelector("#signedInStatus"),
   resetCode: document.querySelector("#resetCode"),
+  functionTemplate: document.querySelector("#functionTemplate"),
   viewSavedCode: document.querySelector("#viewSavedCode"),
   formatCode: document.querySelector("#formatCode"),
   copyCode: document.querySelector("#copyCode"),
@@ -122,6 +126,7 @@ const els = {
   savedCodeStatus: document.querySelector("#savedCodeStatus"),
   savedCodeOutput: document.querySelector("#savedCodeOutput"),
   companyFilters: document.querySelector("#companyFilters"),
+  companySearch: document.querySelector("#companySearch"),
   companyQuestions: document.querySelector("#companyQuestions"),
   companyTitle: document.querySelector("#companyTitle"),
   companyCount: document.querySelector("#companyCount"),
@@ -221,13 +226,19 @@ function initPlaygroundEditor() {
 }
 
 function attachPythonHints(editor) {
+  let hintTimer = null;
   editor.on("inputRead", (cm, event) => {
     if (!event.text.join("").match(/[A-Za-z_]/)) return;
     if (cm.state.completionActive) return;
-    cm.showHint({
-      hint: getPythonHints,
-      completeSingle: false,
-    });
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => {
+      if (!cm.state.completionActive) {
+        cm.showHint({
+          hint: getPythonHints,
+          completeSingle: false,
+        });
+      }
+    }, 150);
   });
 }
 
@@ -344,15 +355,37 @@ function publicTestcasesFor(question) {
     .map((testcase) => ({ input: testcase.input || "", output: testcase.output || "" }));
 }
 
+function getQuestionNumber(questionId) {
+  return state.questions.findIndex((question) => question.id === questionId) + 1;
+}
+
+function matchesQuestionSearch(question, query) {
+  const cleanQuery = query.trim().toLowerCase();
+  if (!cleanQuery) return true;
+  const questionNumber = String(getQuestionNumber(question.id));
+  const searchable = [
+    questionNumber,
+    question.title,
+    question.difficulty,
+    question.company,
+    question.statement,
+  ]
+    .join(" ")
+    .toLowerCase();
+  return searchable.includes(cleanQuery);
+}
+
 function renderQuestions() {
-  els.questionCount.textContent = `${state.questions.length} available`;
-  els.questions.innerHTML = state.questions
-    .map((q, index) => {
+  const visibleQuestions = state.questions.filter((question) => matchesQuestionSearch(question, state.questionSearch));
+  els.questionCount.textContent = `${visibleQuestions.length}/${state.questions.length} available`;
+  els.questions.innerHTML = visibleQuestions.length
+    ? visibleQuestions.map((q) => {
       const solved = state.userSolved.includes(q.id);
+      const questionNumber = getQuestionNumber(q.id);
       return `
         <button class="question-card ${q.id === state.selectedId ? "active" : ""}" type="button" data-id="${q.id}">
           ${solved ? '<span class="solved-pill">Done</span>' : ""}
-          <strong><span class="question-number">${index + 1}.</span> ${escapeHtml(q.title)}</strong>
+          <strong><span class="question-number">${questionNumber}.</span> ${escapeHtml(q.title)}</strong>
           ${q.company ? `<span class="badge company-badge">${escapeHtml(q.company)}</span>` : ""}
           <span class="badge">${escapeHtml(q.difficulty)}</span>
           <span class="badge accent">${q.publicTestcaseCount} public</span>
@@ -360,7 +393,8 @@ function renderQuestions() {
         </button>
       `;
     })
-    .join("");
+    .join("")
+    : '<p class="hint">No matching questions.</p>';
 }
 
 function selectQuestion(id) {
@@ -384,6 +418,512 @@ function selectQuestion(id) {
   renderQuestions();
   updateEditorMeta();
 }
+
+
+const QUESTION_TEMPLATES = {
+  // ── Static questions ──────────────────────────────────────────────────────
+  "sum-two-numbers": `# Sum Two Numbers
+# Input: two integers on one line
+# Example: 2 3
+
+a, b = map(int, input().split())
+
+# Write your solution here
+`,
+
+  "largest-of-three": `# Largest of Three
+# Input: three integers on one line
+# Example: 3 9 1
+
+a, b, c = map(int, input().split())
+
+# Write your solution here
+`,
+
+  "palindrome-check": `# Palindrome Check
+# Input: a string on one line
+# Example: level
+
+s = input()
+
+# Write your solution here
+`,
+
+  "factorial": `# Factorial
+# Input: a non-negative integer n
+# Example: 5
+
+n = int(input())
+
+# Write your solution here
+`,
+
+  "count-vowels": `# Count Vowels
+# Input: one line of text
+# Example: Hello World
+
+line = input()
+
+# Write your solution here
+`,
+
+  // ── Google ────────────────────────────────────────────────────────────────
+  "google-two-sum": `# Two Sum Pair
+# Input:
+#   Line 1: n (number of integers)
+#   Line 2: n space-separated integers
+#   Line 3: target value
+# Example: 4 / 2 7 11 15 / 9
+
+n = int(input())
+arr = list(map(int, input().split()))
+target = int(input())
+
+# Write your solution here
+`,
+
+  "google-valid-parentheses": `# Valid Parentheses
+# Input: a string of brackets on one line
+# Example: ({[]})
+
+s = input()
+
+# Write your solution here
+`,
+
+  "google-longest-substring": `# Longest Unique Substring
+# Input: a string on one line
+# Example: abcabcbb
+
+s = input()
+
+# Write your solution here
+`,
+
+  // ── Meta ──────────────────────────────────────────────────────────────────
+  "meta-merge-intervals": `# Merge Intervals
+# Input:
+#   Line 1: n (number of intervals)
+#   Next n lines: start end
+# Example: 4 / 1 3 / 2 6 / 8 10 / 15 18
+
+n = int(input())
+intervals = [list(map(int, input().split())) for _ in range(n)]
+
+# Write your solution here
+`,
+
+  "meta-binary-tree-level-order": `# Level Order Values
+# Input: space-separated level-order nodes (null for missing) on one line
+# Example: 3 9 20 null null 15 7
+
+vals = input().split()
+
+# Write your solution here
+`,
+
+  "meta-move-zeroes": `# Move Zeroes
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated integers
+# Example: 5 / 0 1 0 3 12
+
+n = int(input())
+arr = list(map(int, input().split()))
+
+# Write your solution here
+`,
+
+  // ── Amazon ────────────────────────────────────────────────────────────────
+  "amazon-kth-largest": `# Kth Largest Element
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated integers
+#   Line 3: k
+# Example: 6 / 3 2 1 5 6 4 / 2
+
+n = int(input())
+arr = list(map(int, input().split()))
+k = int(input())
+
+# Write your solution here
+`,
+
+  "amazon-product-array": `# Product Except Self
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated integers
+# Example: 4 / 1 2 3 4
+
+n = int(input())
+arr = list(map(int, input().split()))
+
+# Write your solution here
+`,
+
+  "amazon-first-non-repeating": `# First Non-Repeating Character
+# Input: a string on one line
+# Example: swiss
+
+s = input()
+
+# Write your solution here
+`,
+
+  // ── TCS ───────────────────────────────────────────────────────────────────
+  "tcs-count-words": `# Count Words
+# Input: one line of text
+# Example: TCS digital coding round
+
+line = input()
+
+# Write your solution here
+`,
+
+  "tcs-armstrong-number": `# Armstrong Number
+# Input: an integer n on one line
+# Example: 153
+
+n = input().strip()
+
+# Write your solution here
+`,
+
+  "tcs-series-sum": `# Series Sum
+# Input: integer n on one line
+# Example: 4
+
+n = int(input())
+
+# Write your solution here
+`,
+
+  // ── Infosys ───────────────────────────────────────────────────────────────
+  "infosys-anagram-check": `# Anagram Check
+# Input:
+#   Line 1: first string
+#   Line 2: second string
+# Example: listen / silent
+
+a = input()
+b = input()
+
+# Write your solution here
+`,
+
+  "infosys-second-largest": `# Second Largest
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated integers
+# Example: 5 / 7 3 9 9 5
+
+n = int(input())
+arr = list(map(int, input().split()))
+
+# Write your solution here
+`,
+
+  "infosys-matrix-diagonal": `# Matrix Diagonal Difference
+# Input:
+#   Line 1: n (matrix size)
+#   Next n lines: n space-separated integers each
+# Example: 3 / 11 2 4 / 4 5 6 / 10 8 -12
+
+n = int(input())
+matrix = [list(map(int, input().split())) for _ in range(n)]
+
+# Write your solution here
+`,
+
+  // ── Wipro ─────────────────────────────────────────────────────────────────
+  "wipro-reverse-words": `# Reverse Words
+# Input: a sentence on one line
+# Example: welcome to wipro
+
+words = input().split()
+
+# Write your solution here
+`,
+
+  "wipro-gcd-lcm": `# GCD and LCM
+# Input: two integers on one line
+# Example: 12 18
+
+a, b = map(int, input().split())
+
+# Write your solution here
+`,
+
+  "wipro-remove-duplicates": `# Remove Duplicate Characters
+# Input: a string on one line
+# Example: programming
+
+s = input()
+
+# Write your solution here
+`,
+
+  // ── Apple ─────────────────────────────────────────────────────────────────
+  "apple-rotate-array": `# Rotate Array
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated integers
+#   Line 3: k (rotate right by k)
+# Example: 5 / 1 2 3 4 5 / 2
+
+n = int(input())
+arr = list(map(int, input().split()))
+k = int(input())
+
+# Write your solution here
+`,
+
+  "apple-valid-palindrome": `# Clean Palindrome
+# Input: a string on one line (may contain spaces/punctuation)
+# Example: A man, a plan, a canal: Panama
+
+s = input()
+
+# Write your solution here
+`,
+
+  "apple-stock-profit": `# Best Time to Buy Stock
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated prices
+# Example: 6 / 7 1 5 3 6 4
+
+n = int(input())
+prices = list(map(int, input().split()))
+
+# Write your solution here
+`,
+
+  // ── Netflix ───────────────────────────────────────────────────────────────
+  "netflix-top-k-frequency": `# Top K Frequent Numbers
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated integers
+#   Line 3: k
+# Example: 6 / 1 1 1 2 2 3 / 2
+
+n = int(input())
+arr = list(map(int, input().split()))
+k = int(input())
+
+# Write your solution here
+`,
+
+  "netflix-longest-repeating": `# Longest Repeating Run
+# Input: a string on one line
+# Example: aaabbccccd
+
+s = input()
+
+# Write your solution here
+`,
+
+  "netflix-watch-history": `# Unique Watch Order
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated movie IDs
+# Example: 7 / m1 m2 m1 m3 m2 m4 m4
+
+n = int(input())
+ids = input().split()
+
+# Write your solution here
+`,
+
+  // ── Alphabet ──────────────────────────────────────────────────────────────
+  "alphabet-word-ladder-lite": `# One Edit Apart
+# Input:
+#   Line 1: first word
+#   Line 2: second word
+# Example: pale / ple
+
+a = input()
+b = input()
+
+# Write your solution here
+`,
+
+  "alphabet-search-prefix": `# Prefix Match Count
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated words
+#   Line 3: prefix
+# Example: 5 / app apple apply bat ape / app
+
+n = int(input())
+words = input().split()
+prefix = input()
+
+# Write your solution here
+`,
+
+  "alphabet-isomorphic": `# Isomorphic Strings
+# Input:
+#   Line 1: first string
+#   Line 2: second string
+# Example: egg / add
+
+a = input()
+b = input()
+
+# Write your solution here
+`,
+
+  // ── Microsoft ─────────────────────────────────────────────────────────────
+  "microsoft-missing-number": `# Missing Number
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated distinct integers from 0 to n
+# Example: 3 / 3 0 1
+
+n = int(input())
+arr = list(map(int, input().split()))
+
+# Write your solution here
+`,
+
+  "microsoft-spiral-matrix": `# Spiral Matrix
+# Input:
+#   Line 1: rows cols
+#   Next rows lines: cols space-separated integers each
+# Example: 3 3 / 1 2 3 / 4 5 6 / 7 8 9
+
+rows, cols = map(int, input().split())
+matrix = [list(map(int, input().split())) for _ in range(rows)]
+
+# Write your solution here
+`,
+
+  // ── Adobe ─────────────────────────────────────────────────────────────────
+  "adobe-compress-string": `# Compress String
+# Input: a string on one line
+# Example: aaabbc
+
+s = input()
+
+# Write your solution here
+`,
+
+  // ── Oracle ────────────────────────────────────────────────────────────────
+  "oracle-balanced-array": `# Equilibrium Index
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated integers
+# Example: 5 / 1 3 5 2 2
+
+n = int(input())
+arr = list(map(int, input().split()))
+
+# Write your solution here
+`,
+
+  // ── IBM ───────────────────────────────────────────────────────────────────
+  "ibm-binary-search": `# Binary Search
+# Input:
+#   Line 1: n
+#   Line 2: n sorted space-separated integers
+#   Line 3: target
+        result = mid; break
+    elif arr[mid] < target:
+        lo = mid + 1
+    else:
+        hi = mid - 1
+print(result)
+`,
+
+  // ── Flipkart ──────────────────────────────────────────────────────────────
+  "flipkart-cart-total": `# Cart Discount
+# Input:
+#   Line 1: n
+#   Line 2: n space-separated prices
+# Example: 3 / 300 400 500
+
+n = int(input())
+prices = list(map(int, input().split()))
+
+# Write your solution here
+`,
+
+  // ── Uber ──────────────────────────────────────────────────────────────────
+  "uber-min-platforms": `# Minimum Platforms
+# Input:
+#   Line 1: n
+#   Line 2: n arrival times (integers)
+#   Line 3: n departure times (integers)
+# Example: 6 / 900 940 950 1100 1500 1800 / 910 1200 1120 1130 1900 2000
+
+n = int(input())
+arrivals = list(map(int, input().split()))
+departures = list(map(int, input().split()))
+
+# Write your solution here
+`,
+
+  // ── Salesforce ────────────────────────────────────────────────────────────
+  "salesforce-common-elements": `# Common Sorted Elements
+# Input:
+#   Line 1: m n (sizes of two arrays)
+#   Line 2: m sorted integers
+#   Line 3: n sorted integers
+# Example: 5 4 / 1 2 2 3 4 / 2 2 4 6
+
+m, n = map(int, input().split())
+a = list(map(int, input().split()))
+b = list(map(int, input().split()))
+
+# Write your solution here
+`,
+
+  // ── Paytm ─────────────────────────────────────────────────────────────────
+  "paytm-currency-count": `# Minimum Notes
+# Input: an integer amount on one line
+# Example: 786
+
+amount = int(input())
+
+# Write your solution here
+`,
+};
+
+function insertFunctionTemplate() {
+  const question = state.questions.find((item) => item.id === state.selectedId);
+  if (!question) return;
+
+  let template = QUESTION_TEMPLATES[question.id];
+
+  if (!template) {
+    // Generic fallback for any question not in the map
+    const exampleLines = (question.publicTestcases?.[0]?.input || "").trimEnd().split("\n");
+    template = `# ${question.title}
+# Use input() to read each line of input.
+# Example input:
+${exampleLines.map((line) => `# ${line}`).join("\n")}
+
+def solve():
+    # Read input using input() — one call per line.
+    # e.g. n = int(input())
+    #      arr = list(map(int, input().split()))
+    pass
+
+solve()
+`;
+  }
+
+  if (state.practiceEditor) {
+    state.practiceEditor.setValue(template);
+    state.practiceEditor.focus();
+  } else {
+    els.codeEditor.value = template;
+  }
+  updateEditorMeta();
+  els.runSummary.textContent = "Input template inserted";
+}
+
 
 function renderPublicTestcases(testcases) {
   if (!testcases.length) {
@@ -705,14 +1245,15 @@ async function renderLeaderboard() {
 function renderCompanyQuestions() {
   if (!els.companyFilters || !els.companyQuestions) return;
   const companyQuestions = state.questions.filter((question) => question.company);
+  const searchedCompanyQuestions = companyQuestions.filter((question) => matchesQuestionSearch(question, state.companySearch));
   const companies = [ALL_COMPANIES, ...new Set(companyQuestions.map((question) => question.company).sort())];
-  els.companyCount.textContent = `${companyQuestions.length} questions`;
+  els.companyCount.textContent = `${searchedCompanyQuestions.length}/${companyQuestions.length} questions`;
   els.companyFilters.innerHTML = companies
     .map(
       (company) => `
         <button class="question-card ${state.companyFilter === company ? "active" : ""}" type="button" data-company="${escapeHtml(company)}">
           <strong>${escapeHtml(company)}</strong>
-          <span class="badge">${company === ALL_COMPANIES ? companyQuestions.length : companyQuestions.filter((question) => question.company === company).length} questions</span>
+          <span class="badge">${company === ALL_COMPANIES ? searchedCompanyQuestions.length : searchedCompanyQuestions.filter((question) => question.company === company).length} questions</span>
         </button>
       `,
     )
@@ -720,14 +1261,15 @@ function renderCompanyQuestions() {
 
   const visibleQuestions =
     state.companyFilter === ALL_COMPANIES
-      ? companyQuestions
-      : companyQuestions.filter((question) => question.company === state.companyFilter);
+      ? searchedCompanyQuestions
+      : searchedCompanyQuestions.filter((question) => question.company === state.companyFilter);
 
   els.companyTitle.textContent = state.companyFilter === ALL_COMPANIES ? "All Company Questions" : `${state.companyFilter} Questions`;
   els.companyQuestions.innerHTML = visibleQuestions.length
     ? visibleQuestions
-        .map((question, index) => {
+        .map((question) => {
           const solved = state.userSolved.includes(question.id);
+          const questionNumber = getQuestionNumber(question.id);
           return `
             <article class="company-card">
               <div>
@@ -735,7 +1277,7 @@ function renderCompanyQuestions() {
                 <span class="badge">${escapeHtml(question.difficulty)}</span>
                 ${solved ? '<span class="solved-pill inline">Done</span>' : ""}
               </div>
-              <h3><span class="question-number">${index + 1}.</span> ${escapeHtml(question.title)}</h3>
+              <h3><span class="question-number">${questionNumber}.</span> ${escapeHtml(question.title)}</h3>
               <p>${escapeHtml(question.statement)}</p>
               <button class="primary-button compact" type="button" data-practice-question="${escapeHtml(question.id)}">Practice</button>
             </article>
@@ -1114,10 +1656,18 @@ els.questions.addEventListener("click", (event) => {
   const card = event.target.closest("[data-id]");
   if (card) selectQuestion(card.dataset.id);
 });
+els.questionSearch?.addEventListener("input", () => {
+  state.questionSearch = els.questionSearch.value;
+  renderQuestions();
+});
 els.companyFilters.addEventListener("click", (event) => {
   const button = event.target.closest("[data-company]");
   if (!button) return;
   state.companyFilter = button.dataset.company;
+  renderCompanyQuestions();
+});
+els.companySearch?.addEventListener("input", () => {
+  state.companySearch = els.companySearch.value;
   renderCompanyQuestions();
 });
 els.companyQuestions.addEventListener("click", (event) => {
@@ -1128,6 +1678,7 @@ els.companyQuestions.addEventListener("click", (event) => {
   selectQuestion(state.selectedId);
 });
 els.resetCode.addEventListener("click", () => selectQuestion(state.selectedId));
+els.functionTemplate?.addEventListener("click", insertFunctionTemplate);
 els.viewSavedCode.addEventListener("click", showSavedCode);
 els.formatCode.addEventListener("click", formatCode);
 els.copyCode.addEventListener("click", copyCode);
