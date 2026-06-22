@@ -305,25 +305,25 @@ async function loadQuestions() {
 
 async function loadStaticQuestions() {
   const seedQuestions = await fetch(STATIC_QUESTIONS_URL).then((response) => response.json());
-  
+
   let localQuestions = [];
   try {
     const qSnap = await getDocs(collection(db, "questions"));
     localQuestions = qSnap.docs.map(d => d.data());
-  } catch(e) { console.error(e); }
-  
+  } catch (e) { console.error(e); }
+
   let approvedSuggestions = [];
   try {
     const sSnap = await getDocs(collection(db, "suggestions"));
     approvedSuggestions = sSnap.docs.map(d => d.data()).filter((item) => item.status === "approved");
-  } catch(e) { console.error(e); }
+  } catch (e) { console.error(e); }
 
   let removedQuestionIds = [];
   try {
     const removedSnap = await getDocs(collection(db, "removedQuestions"));
     removedQuestionIds = removedSnap.docs.map((d) => d.id);
-  } catch(e) { console.error(e); }
-  
+  } catch (e) { console.error(e); }
+
   const merged = [...seedQuestions, ...COMPANY_QUESTIONS, ...localQuestions, ...approvedSuggestions.map((item) => item.question)];
   state.fullQuestions = dedupeQuestions(merged).filter((question) => !removedQuestionIds.includes(question.id));
   state.questions = state.fullQuestions.map(toPublicQuestion);
@@ -393,7 +393,7 @@ function renderQuestions() {
         </button>
       `;
     })
-    .join("")
+      .join("")
     : '<p class="hint">No matching questions.</p>';
 }
 
@@ -934,16 +934,16 @@ function renderPublicTestcases(testcases) {
     <h3>Public Testcases</h3>
     <div class="public-case-grid">
       ${testcases
-        .map(
-          (testcase, index) => `
+      .map(
+        (testcase, index) => `
             <article class="public-case">
               <strong>Example ${index + 1}</strong>
               <span>Input</span><pre>${escapeHtml(testcase.input)}</pre>
               <span>Output</span><pre>${escapeHtml(testcase.output)}</pre>
             </article>
           `,
-        )
-        .join("")}
+      )
+      .join("")}
     </div>
   `;
 }
@@ -1086,9 +1086,9 @@ async function authContinue() {
     switchView("admin");
     return;
   }
-  
+
   const userRef = doc(db, "users", username.toLowerCase());
-  
+
   if (state.authMode === "signup") {
     const docSnap = await getDoc(userRef);
     if (docSnap.exists()) {
@@ -1102,7 +1102,7 @@ async function authContinue() {
     switchView("user");
     return;
   }
-  
+
   const docSnap = await getDoc(userRef);
   if (!docSnap.exists()) {
     els.loginMessage.textContent = "Invalid username or password.";
@@ -1212,32 +1212,32 @@ async function renderLeaderboard() {
   try {
     const usersSnap = await getDocs(collection(db, "users"));
     const users = usersSnap.docs.map(d => d.data()).filter(u => u.active);
-    
+
     const solvesSnap = await getDocs(collection(db, "solves"));
     const solves = {};
     solvesSnap.docs.forEach(d => {
       solves[d.id] = d.data().solved || [];
     });
-    
+
     const rows = users
       .map((user) => ({ username: user.username, solved: (solves[user.username.toLowerCase()] || []).length }))
       .sort((a, b) => b.solved - a.solved || a.username.localeCompare(b.username));
-      
+
     els.leaderboardCount.textContent = `${rows.length} users`;
     els.leaderboardRows.innerHTML = rows.length
       ? rows
-          .map(
-            (row, index) => `
+        .map(
+          (row, index) => `
               <article class="leaderboard-row">
                 <strong>#${index + 1}</strong>
                 <span>${escapeHtml(row.username)}</span>
                 <b>${row.solved} solved</b>
               </article>
             `,
-          )
-          .join("")
+        )
+        .join("")
       : '<p class="hint">No registered users yet.</p>';
-  } catch(e) {
+  } catch (e) {
     els.leaderboardRows.innerHTML = '<p class="hint">Error loading leaderboard.</p>';
   }
 }
@@ -1267,10 +1267,10 @@ function renderCompanyQuestions() {
   els.companyTitle.textContent = state.companyFilter === ALL_COMPANIES ? "All Company Questions" : `${state.companyFilter} Questions`;
   els.companyQuestions.innerHTML = visibleQuestions.length
     ? visibleQuestions
-        .map((question) => {
-          const solved = state.userSolved.includes(question.id);
-          const questionNumber = getQuestionNumber(question.id);
-          return `
+      .map((question) => {
+        const solved = state.userSolved.includes(question.id);
+        const questionNumber = getQuestionNumber(question.id);
+        return `
             <article class="company-card">
               <div>
                 <span class="badge company-badge">${escapeHtml(question.company)}</span>
@@ -1282,8 +1282,8 @@ function renderCompanyQuestions() {
               <button class="primary-button compact" type="button" data-practice-question="${escapeHtml(question.id)}">Practice</button>
             </article>
           `;
-        })
-        .join("")
+      })
+      .join("")
     : '<p class="hint">No company questions found.</p>';
 }
 
@@ -1416,8 +1416,8 @@ function renderAdmin() {
 function renderAdminQuestions() {
   els.adminQuestions.innerHTML = state.fullQuestions.length
     ? state.fullQuestions
-        .map(
-          (q, index) => `
+      .map(
+        (q, index) => `
           <div class="admin-question">
             <div>
               <strong><span class="question-number">${index + 1}.</span> ${escapeHtml(q.title)}</strong>
@@ -1426,8 +1426,8 @@ function renderAdminQuestions() {
             <button class="ghost-button compact danger-button" type="button" data-remove-question="${escapeHtml(q.id)}">Remove</button>
           </div>
         `,
-        )
-        .join("")
+      )
+      .join("")
     : '<p class="hint">No questions available.</p>';
 }
 
@@ -1438,8 +1438,8 @@ async function renderSuggestions() {
     const suggestions = snap.docs.map(d => d.data()).filter((item) => item.status === "pending");
     els.pendingSuggestions.innerHTML = suggestions.length
       ? suggestions
-          .map(
-            (item) => `
+        .map(
+          (item) => `
               <article class="review-card">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                   <div>
@@ -1473,10 +1473,10 @@ async function renderSuggestions() {
                 </details>
               </article>
             `,
-          )
-          .join("")
+        )
+        .join("")
       : '<p class="hint">No pending suggestions.</p>';
-  } catch(e) {
+  } catch (e) {
     els.pendingSuggestions.innerHTML = '<p class="hint">Error loading suggestions.</p>';
   }
 }
@@ -1489,11 +1489,11 @@ async function renderAdminUsers() {
     const solvesSnap = await getDocs(collection(db, "solves"));
     const solves = {};
     solvesSnap.docs.forEach(d => { solves[d.id] = d.data().solved || []; });
-    
+
     els.adminUsers.innerHTML = users.length
       ? users
-          .map(
-            (user) => `
+        .map(
+          (user) => `
               <article class="user-row">
                 <div>
                   <strong>${escapeHtml(user.username)}</strong>
@@ -1502,10 +1502,10 @@ async function renderAdminUsers() {
                 <button class="ghost-button compact" type="button" data-remove-user="${escapeHtml(user.username)}">Remove</button>
               </article>
             `,
-          )
-          .join("")
+        )
+        .join("")
       : '<p class="hint">No registered users.</p>';
-  } catch(e) {
+  } catch (e) {
     els.adminUsers.innerHTML = '<p class="hint">Error loading users.</p>';
   }
 }
@@ -1516,7 +1516,7 @@ async function approveSuggestion(id, status) {
   if (!snap.exists()) return;
   const suggestion = snap.data();
   await updateDoc(sugRef, { status });
-  
+
   if (status === "approved") {
     await deleteDoc(doc(db, "removedQuestions", suggestion.question.id));
     await setDoc(doc(db, "questions", suggestion.question.id), suggestion.question);
