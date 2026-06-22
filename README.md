@@ -1,197 +1,130 @@
 # Python Compiler Lab
 
-Python Compiler Lab is a web application for practicing Python coding questions. It has an admin side for uploading questions and testcases, and a user side where students can select a question, write Python code, run it, and see which testcases pass.
-# website :- https://abhi-vit.github.io/Coding-platform/static/
+Python Compiler Lab is a serverless web-based platform designed for practicing Python coding questions. The application leverages **Pyodide** (a WebAssembly-based Python interpreter) to run Python code entirely in the browser, and **Firebase Firestore** to manage users, progress, submissions, leaderboard, suggestions, and question seeding.
 
-## Features
+## 🚀 Live Demo
+Visit the live application here: [https://abhi-vit.github.io/Coding-platform/static/](https://abhi-vit.github.io/Coding-platform/static/)
 
-- Home page with project details
-- Login and sign up buttons
-- Admin login with default credentials
-- Admin question upload form
-- Public and private testcase support
-- User question selection page
-- VS Code-style Python editor
-- Auto-closing brackets, parentheses, quotes, and keyword/variable suggestions
-- Saved accepted code for solved questions
-- Company-specific practice tab with questions inspired by large-company coding rounds
-- Smart editor features:
-  - auto indentation after `:`
-  - auto closing brackets and quotes
-  - tab inserts 4 spaces
-  - `Ctrl + Enter` runs code
-- Python code runner with testcase checking
-- Hidden/private testcase results show only pass or fail
-- GitHub Pages support with browser-based Python execution through Pyodide
+---
 
-## Accounts
+## ✨ Features
 
-Users can sign up with a username and password, solve questions, appear on the leaderboard, and suggest new questions for review.
+- **In-Browser Execution**: Uses **Pyodide** to run user submissions directly in the browser's WebAssembly sandbox. Safe, fast, and does not require a remote code execution backend.
+- **Firebase Backend Integration**:
+  - Secure signup and login for learner accounts.
+  - Seeding default questions and persisting custom questions added by admins.
+  - Tracking solved status and saving the accepted user code for reference.
+  - Real-time global **Leaderboard** based on solved questions counts.
+- **VS Code-Style Python Editor**:
+  - Driven by **CodeMirror** with Dracula theme.
+  - Bracket-matching and auto-closing (parentheses, brackets, quotes).
+  - Autocomplete hinting for standard Python keywords and local variables.
+  - Indentation formatting helper.
+  - Code resetting, clipboard copy, and dynamic **Input Template** insertion.
+- **Dedicated Playgrounds & Practice Rooms**:
+  - **Standard Practice**: Coding questions with public and hidden test cases.
+  - **Company-specific practice**: A dedicated tab containing questions inspired by coding rounds at top tech firms (Google, Meta, Amazon, Apple, Netflix, Microsoft, etc.).
+  - **Playground**: Run custom Python scripts with arbitrary inputs directly in the browser.
+- **Community Contributions**:
+  - Learners can suggest new questions containing problem descriptions, starter code, and test cases.
+  - Suggestions go to a pending review queue visible to admins.
+- **Admin Control Panel**:
+  - Multi-tab admin tool for:
+    - **Questions**: Adding new questions with custom testcases and deleting existing questions.
+    - **Approvals**: Reviewing suggested questions and approving (automatically publishing them) or rejecting.
+    - **Users**: Reviewing and managing registered users, with options to delete profiles.
 
-The admin account opens the control panel, where questions can be added, suggested questions can be approved or rejected, and users can be removed. Admin credentials are not shown in the app UI.
+---
 
-On GitHub Pages, account data, admin-added questions, suggestions, and leaderboard progress are saved in the current browser with `localStorage`. To permanently add default questions for everyone, edit `data/questions.json` and push the change to GitHub.
+## 🛠️ Architecture & Tech Stack
 
-## Project Structure
+- **Frontend**: Standard HTML5, vanilla CSS3, and modern JavaScript.
+- **Editor**: CodeMirror (v5.65.13) for syntax highlighting and autocomplete.
+- **Database**: Firebase Firestore (Web SDK v12.13.0) for accounts, solved submissions, questions list, and suggestions.
+- **Execution Sandbox**: Pyodide loaded via CDN.
+- **Local Server**: A lightweight, Python-based local server `server.py` designed to serve static files.
 
-```text
-Compiler-python/
-|-- index.html
-|-- server.py
-|-- README.md
-|-- data/
-|   `-- questions.json
-`-- static/
-    |-- index.html
-    |-- styles.css
-    `-- app.js
-```
+---
 
-## Go Live With GitHub Pages
-
-1. Push this project to a GitHub repository.
-2. On GitHub, open the repository settings.
-3. Go to `Pages`.
-4. Under `Build and deployment`, choose:
-   - Source: `Deploy from a branch`
-   - Branch: `main`
-   - Folder: `/ (root)`
-5. Click `Save`.
-6. Wait for GitHub Pages to publish the site.
-
-Your live URL will look like:
+## 📂 Project Structure
 
 ```text
-https://your-username.github.io/your-repository-name/
+Coding-platform/
+├── LICENSE
+├── README.md
+├── server.py                # Local web server to serve the static folder
+├── data/
+│   └── questions.json       # Seed questions list
+└── static/
+    ├── index.html           # Main frontend entry point
+    ├── styles.css           # Styling for all views and elements
+    └── app.js               # Frontend routing, Firebase Firestore, Pyodide logic
 ```
 
-This project includes a root `index.html` that redirects visitors to `static/`, so the repository root works directly on GitHub Pages.
+---
 
-## How To Run Locally With Backend
+## 👤 Accounts & Authentication
 
-Open a terminal in the project folder and run:
+### 1. User Accounts
+Users register and log in via the client-side login modal. User credentials and profile statuses are stored and authenticated against the Firebase `users` collection. 
 
+### 2. Admin Account
+Administrators log in using credentials verified against `localStorage` values.
+* **Default Admin Username**: `admin`
+* **Default Admin Password**: `admin123`
+*(Admin credentials are set during application initialization if not already present in the browser's `localStorage`.)*
+
+---
+
+## 🖥️ How to Run Locally
+
+### 1. Run the Python Web Server
+Open a terminal in the repository root and launch the local web server:
 ```bash
 python server.py
 ```
+This runs a local threading HTTP server serving the `static` assets.
 
-Then open:
-
+### 2. Access the Application
+Open your web browser and navigate to:
 ```text
 http://127.0.0.1:8000
 ```
 
-The local backend version uses `server.py` for admin login, saving questions to `data/questions.json`, and running Python submissions with your installed Python interpreter.
+---
 
-## How GitHub Pages Mode Works
+## 🚀 Deploying to GitHub Pages
 
-GitHub Pages can only host static files, so it cannot run `server.py` or Python subprocesses on the server. The frontend automatically switches to static mode when hosted on GitHub Pages:
+GitHub Pages serves static files directly from your repository root:
+1. Push this project to your GitHub repository.
+2. In the repository settings, go to the **Pages** tab.
+3. Under **Build and deployment**, select:
+   - Source: `Deploy from a branch`
+   - Branch: `main` (or whichever branch holds your code)
+   - Folder: `/ (root)`
+4. Click **Save**.
+5. Once built, the page will be live at `https://<your-username>.github.io/<your-repository-name>/`.
+*(The root `index.html` file includes a meta redirect to `/static/` so that direct accesses are routed seamlessly.)*
 
-- Questions load from `data/questions.json`.
-- User accounts, admin-added questions, suggested questions, and leaderboard progress are stored in the browser with `localStorage`.
-- Python submissions run in the browser with Pyodide loaded from a CDN.
-- Private testcase inputs still exist in the public JSON file, so GitHub Pages mode is best for demos and learning projects.
+---
 
-## User Flow
+## 📁 Firebase Collections Structure
 
-1. Open the website.
-2. Click `Practice`, `Login`, or `Sign up`.
-3. Choose a question from the question list.
-4. Read the problem statement and public testcases.
-5. Write Python code in the editor.
-6. Click `Run Testcases`.
-7. Check which public and private tests passed.
+The Firestore database uses the following schemas:
 
-The user can see public testcase input/output examples, but private testcase data is hidden in the result screen.
+* **`questions`**: Stores custom questions added by admins or approved suggestions.
+  - Schema: `{ id, title, difficulty, statement, starterCode, testcases: [{ input, output, isPublic }] }`
+* **`suggestions`**: Stores community question suggestions.
+  - Schema: `{ id, question, author, status ("pending" | "approved" | "rejected"), createdAt }`
+* **`users`**: Manages user profiles.
+  - Schema: `{ username, password, createdAt, active (boolean), role ("user" | "admin") }`
+* **`solves`**: Tracks user progress.
+  - Schema: `{ solved: [questionId], savedCode: { questionId: code } }`
+* **`removedQuestions`**: Keeps track of questions deleted by the admin to filter them from the frontend merged list.
+  - Schema: `{ id, removedAt, removedBy }`
 
-## Admin Flow
+---
 
-1. Click `Login`.
-2. Enter `admin` and `admin123`.
-3. Open the admin upload page.
-4. Add:
-   - question title
-   - difficulty
-   - statement
-   - starter code
-   - testcase input
-   - testcase output
-5. Mark testcases as public or private.
-6. Save the question.
+## 🔒 Security & Safe Execution Note
 
-By default, the first two testcases are public and the rest are private.
-
-## Testcase System
-
-Each question stores testcases in `data/questions.json`.
-
-Example:
-
-```json
-{
-  "input": "2 3\n",
-  "output": "5\n",
-  "isPublic": true
-}
-```
-
-Public testcases are shown to the user as examples. Private testcases are used during judging but their input and expected output are not shown in the result screen.
-
-## Compiler Logic
-
-The local backend compiler logic is built inside `server.py`. It is not a real compiler that converts Python into machine code. Instead, it works like an online judge:
-
-1. The frontend sends the selected question ID and user code to `/api/run`.
-2. The backend finds the matching question from `data/questions.json`.
-3. For each testcase, the backend creates a temporary `.py` file.
-4. It runs that file using the current Python interpreter.
-5. The testcase input is passed to the program through standard input.
-6. The program output is captured from standard output.
-7. The captured output is compared with the expected output.
-8. The backend returns pass/fail results to the frontend.
-
-The main execution uses Python's `subprocess.run()`:
-
-```python
-completed = subprocess.run(
-    [sys.executable, filename],
-    input=testcase_input,
-    capture_output=True,
-    text=True,
-    timeout=4,
-)
-```
-
-## Output Checking
-
-Before comparing output, the app normalizes it:
-
-```python
-def normalize_output(value):
-    return "\n".join(line.rstrip() for line in value.strip().splitlines()).strip()
-```
-
-This removes extra spaces at the end of lines and ignores extra blank space at the beginning or end of the full output. The normalized user output is compared with the normalized expected output.
-
-## Security Note
-
-This project is suitable for local use, demos, and learning. Running user-submitted Python code can be dangerous on a public server because Python code can access files, run commands, or use system resources.
-
-Before deploying a backend publicly, the code runner should be placed inside a secure sandbox such as:
-
-- Docker container with strict limits
-- isolated virtual machine
-- restricted execution service
-- resource and filesystem permissions
-
-## Current Seed Questions
-
-The app includes five default questions:
-
-1. Sum Two Numbers
-2. Largest of Three
-3. Palindrome Check
-4. Factorial
-5. Count Vowels
-
-Each question has starter code, two public testcases, and at least one private testcase.
+By running code on the user's browser using **Pyodide** instead of a remote execution server, the application is inherently secure from Server-Side Request Forgery (SSRF), remote code execution vulnerabilities on the server host, and resource exhaustion. Each user's code executes in an isolated browser environment, protecting the backend completely.
